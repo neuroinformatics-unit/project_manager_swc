@@ -1,8 +1,5 @@
-"""
-SSH configs are set in conftest.py . The password
-should be stored in a file called test_ssh_password.txt located
-in the same folder as test_ssh.py
-"""
+import getpass
+
 import pytest
 import ssh_test_utils
 import test_utils
@@ -16,8 +13,9 @@ class TestSSH:
     @pytest.fixture(scope="function")
     def project(test, tmp_path):
         """
-        Make a project as per usual, but now add
-        in test ssh configurations
+        Setup a test project with the ssh options specified in
+        ssh_config. During setup, the SSH setup routine for a
+        project is not run, as it is tested here.
         """
         tmp_path = tmp_path / "test with space"
 
@@ -29,16 +27,16 @@ class TestSSH:
         ssh_test_utils.setup_project_for_ssh(
             project,
             ssh_config.FILESYSTEM_PATH,
-            ssh_config.REMOTE_HOST_ID,
-            ssh_config.USERNAME,
+            ssh_config,
+            setup_ssh_connection=False,
         )
 
         yield project
         test_utils.teardown_project(cwd, project)
 
-    # -----------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Test Setup SSH Connection
-    # -----------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     @pytest.mark.parametrize("input_", ["n", "o", "@"])
     def test_verify_ssh_remote_host_do_not_accept(
@@ -97,3 +95,26 @@ class TestSSH:
             first_line = file.readlines()[0]
 
         assert first_line == "-----BEGIN RSA PRIVATE KEY-----\n"
+
+    def test_setup_ssh_key_failure(self, project):
+        """
+        Enter the wrong password and check failure is gracefully handled.
+        Successful password entry is not tested as would require
+        password stored locally.
+        """
+        ssh_test_utils.setup_hostkeys(project)
+
+        getpass.getpass = lambda _: "wrong_password"  # type: ignore
+
+        with pytest.raises(BaseException) as e:
+            ssh.setup_ssh_key(
+                project.cfg,
+                log=False,
+            )
+
+        assert (
+            "Could not connect to server. Ensure that "
+            "\n1) You have run setup_ssh_connection_to_remote_server() "
+            "\n2) You are on VPN network if required. "
+            "\n3) The remote_host_id:" in str(e.value)
+        )

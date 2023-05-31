@@ -1,11 +1,12 @@
 import builtins
 import copy
+import shutil
 
 from datashuttle.utils import rclone, ssh
 
 
 def setup_project_for_ssh(
-    project, remote_path, remote_host_id, remote_host_username
+    project, remote_path, ssh_config, setup_ssh_connection=True
 ):
     """
     Setup the project configs to use SSH connection
@@ -15,16 +16,21 @@ def setup_project_for_ssh(
         "remote_path",
         remote_path,
     )
-    project.update_config("remote_host_id", remote_host_id)
-    project.update_config("remote_host_username", remote_host_username)
+    project.update_config("remote_host_id", ssh_config.REMOTE_HOST_ID)
+    project.update_config("remote_host_username", ssh_config.USERNAME)
     project.update_config("connection_method", "ssh")
 
-    rclone.setup_remote_as_rclone_target(
-        "ssh",
-        project.cfg,
-        project.cfg.get_rclone_config_name("ssh"),
-        project.cfg.ssh_key_path,
-    )
+    if setup_ssh_connection:
+        setup_hostkeys(project)
+
+        shutil.copy(ssh_config.SSH_KEY_PATH, project.cfg.ssh_key_path)
+
+        rclone.setup_remote_as_rclone_target(
+            "ssh",
+            project.cfg,
+            project.cfg.get_rclone_config_name("ssh"),
+            project.cfg.ssh_key_path,
+        )
 
 
 def setup_mock_input(input_):

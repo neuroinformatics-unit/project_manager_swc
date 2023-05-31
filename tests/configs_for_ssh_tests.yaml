@@ -1,0 +1,10 @@
+'test_ssh':
+  false
+'username':
+  'joeziminski'
+'remote_host_id':
+  'localhost'
+'test_data_filesystem_path':
+  false
+'test_data_server_path':
+  false
