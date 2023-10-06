@@ -7,12 +7,14 @@ in the same folder as test_ssh.py
 import pytest
 import ssh_test_utils
 import test_utils
-from pytest import ssh_config
 
+# from pytest import ssh_config
 from datashuttle.utils import ssh
 
+TEST_SSH = False
 
-@pytest.mark.skipif(ssh_config.TEST_SSH is False, reason="TEST_SSH is false")
+
+@pytest.mark.skipif(TEST_SSH is False, reason="TEST_SSH is false")
 class TestSSH:
     @pytest.fixture(scope="function")
     def project(test, tmp_path):
