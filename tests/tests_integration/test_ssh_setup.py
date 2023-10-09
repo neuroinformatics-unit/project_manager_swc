@@ -11,7 +11,7 @@ import test_utils
 # from pytest import ssh_config
 from datashuttle.utils import ssh
 
-TEST_SSH = False
+TEST_SSH = True
 
 
 @pytest.mark.skipif(TEST_SSH is False, reason="TEST_SSH is false")
@@ -31,9 +31,9 @@ class TestSSH:
 
         ssh_test_utils.setup_project_for_ssh(
             project,
-            ssh_config.FILESYSTEM_PATH,
-            ssh_config.CENTRAL_HOST_ID,
-            ssh_config.USERNAME,
+            central_path=f"/home/sshuser/datashuttle/{project.project_name}",  # TODO: centralise these
+            central_host_id="localhost",
+            central_host_username="sshuser",
         )
 
         yield project
