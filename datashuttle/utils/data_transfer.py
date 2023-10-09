@@ -157,7 +157,6 @@ class TransferData:
                     self.update_list_with_non_ses_sub_level_folders(
                         extra_folder_names, extra_filenames, sub
                     )
-
                     continue
 
                 # Datatype (sub and ses level) --------------------------------

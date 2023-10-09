@@ -1,5 +1,8 @@
 import builtins
 import copy
+import stat
+
+import paramiko
 
 from datashuttle.utils import rclone, ssh
 
@@ -55,7 +58,7 @@ def setup_hostkeys(project):
     restore_mock_input(orig_builtin)
 
     orig_getpass = copy.deepcopy(ssh.getpass.getpass)
-    ssh.getpass.getpass = lambda _: "password"
+    ssh.getpass.getpass = lambda _: "password"  # type: ignore
 
     ssh.setup_ssh_key(project.cfg, log=False)
     ssh.getpass.getpass = orig_getpass
@@ -79,3 +82,37 @@ def build_docker_image(project):
         central_host_id="localhost",
         central_host_username="sshuser",
     )
+
+
+def sftp_recursive_file_search(sftp, path_, all_filenames):
+    try:
+        sftp.stat(path_)
+    except FileNotFoundError:
+        return
+
+    for file_or_folder in sftp.listdir_attr(path_):
+        if stat.S_ISDIR(file_or_folder.st_mode):
+            sftp_recursive_file_search(
+                sftp,
+                path_ + "/" + file_or_folder.filename,
+                all_filenames,
+            )
+        else:
+            all_filenames.append(path_ + "/" + file_or_folder.filename)
+
+
+def recursive_search_central(project):
+    """ """
+    with paramiko.SSHClient() as client:
+        ssh.connect_client(client, project.cfg)
+
+        sftp = client.open_sftp()
+
+        all_filenames = []
+
+        sftp_recursive_file_search(
+            sftp,
+            (project.cfg["central_path"] / "rawdata").as_posix(),
+            all_filenames,
+        )
+    return all_filenames

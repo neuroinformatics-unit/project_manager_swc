@@ -3,7 +3,6 @@
 
 import copy
 import shutil
-import stat
 from pathlib import Path
 
 import pandas as pd
@@ -18,61 +17,41 @@ from datashuttle.utils import ssh
 
 TEST_SSH = True  # TODO: base on whether docker / singularity is installed.
 
+
+PARAM_SUBS = [
+    ["all"],
+    ["all_sub"],
+    ["all_non_sub"],
+    ["sub-001"],
+    ["sub-003_date-20231901"],
+    ["sub-002", "all_non_sub"],
+]
+PARAM_SES = [
+    ["all"],
+    ["all_non_ses"],
+    ["all_ses"],
+    ["ses-001"],
+    ["ses-002_random-key"],
+    ["all_non_ses", "ses-001"],
+]
+PARAM_DATATYPE = [
+    ["all"],
+    ["all_non_datatype"],
+    ["all_datatype"],
+    ["behav"],
+    ["ephys"],
+    ["anat"],
+    ["funcimg"],
+    ["anat", "behav", "all_non_datatype"],
+]
+
+
 class TestFileTransfer:
     @pytest.fixture(
         scope="class",
-        params=[
-        #    False,
-            pytest.param(
-                True,
-                marks=pytest.mark.skipif(
-                    TEST_SSH is False, reason="TEST_SSH is set to False."
-                ),
-            ),
-        ],
     )
-    def project_and_test_information(self, request, tmpdir_factory):
-        """
-        Create a project for SSH testing. Setup
-        the project as normal, and switch configs
-        to use SSH connection.
-
-        Although SSH is used for transfer, for SSH tests,
-        checking the created filepaths is always
-        done through the local filesystem for speed
-        and convenience. As such, the drive that is
-        SSH to must also be mounted and the path
-        supplied to the location SSH'd to.
-
-        For speed, create the project once,
-        and all files to transfer. Then in the
-        test function, the folder are transferred.
-        Partial cleanup is done in the test function
-        i.e. deleting the central_path to which the
-        items have been transferred. This is achieved
-        by using "class" scope.
-
-        NOTES
-        -----
-        - Pytest params - The `params` key sets the
-        `params` attribute on the pytest `request` fixture.
-        This attribute is used to set the `testing_ssh` variable
-        to `True` or `False`. In the first run, this is set to
-        `False`, meaning local filesystem tests are run. In the
-        second run, this is set with a pytest parameter that is
-        `True` (i.e. SSH tests are run) but is skipped if `TEST_SSH`
-        in `ssh_config` (set in conftest.py` is `False`.
-
-        - For convenience, files are transferred
-        with SSH and then checked through the local filesystem
-        mount. This is significantly easier than checking
-        everything through SFTP. However, on Windows the
-        mounted filesystem is quite slow to update, taking
-        a few seconds after SSH transfer. This makes the
-        tests run very slowly. We can get rid
-        of this limitation on linux.
-        """
-        testing_ssh = request.param
+    def pathtable_and_project(self, tmpdir_factory):
+        """ """
         tmp_path = tmpdir_factory.mktemp("test")
 
         base_path = tmp_path / "test with space"
@@ -82,17 +61,25 @@ class TestFileTransfer:
             base_path, test_project_name
         )
 
-        if testing_ssh:
-            ssh_test_utils.build_docker_image(project)
-            ssh_test_utils.setup_hostkeys(project)
-
         pathtable = get_pathtable(project.cfg["local_path"])
 
         self.create_all_pathtable_files(pathtable)
 
-        yield [pathtable, project, testing_ssh]
+        yield [pathtable, project]
 
         test_utils.teardown_project(cwd, project)
+
+    @pytest.fixture(
+        scope="class",
+    )
+    def ssh_setup(self, pathtable_and_project):
+        pathtable, project = pathtable_and_project
+        ssh_test_utils.build_docker_image(project)
+        ssh_test_utils.setup_hostkeys(project)
+
+        project.upload_all()
+
+        return [pathtable, project]
 
     # -------------------------------------------------------------------------
     # Utils
@@ -105,77 +92,137 @@ class TestFileTransfer:
     # Test File Transfer - All Options
     # -------------------------------------------------------------------------
 
-    @pytest.mark.parametrize(
-        "sub_names",
-        [
-            ["all"],
-            ["all_sub"],
-            ["all_non_sub"],
-            ["sub-001"],
-            ["sub-003_date-20231901"],
-            ["sub-002", "all_non_sub"],
-        ],
-    )
-    @pytest.mark.parametrize(
-        "ses_names",
-        [
-            ["all"],
-            ["all_non_ses"],
-            ["all_ses"],
-            ["ses-001"],
-            ["ses-002_random-key"],
-            ["all_non_ses", "ses-001"],
-        ],
-    )
-    @pytest.mark.parametrize(
-        "datatype",
-        [
-            ["all"],
-            ["all_non_datatype"],
-            ["all_datatype"],
-            ["behav"],
-            ["ephys"],
-            ["anat"],
-            ["funcimg"],
-            ["anat", "behav", "all_non_datatype"],
-        ],
-    )
-#    @pytest.mark.parametrize("upload_or_download", ["upload", "download"])
-    def test_all_data_transfer_options(
+    @pytest.mark.parametrize("sub_names", PARAM_SUBS)
+    @pytest.mark.parametrize("ses_names", PARAM_SES)
+    @pytest.mark.parametrize("datatype", PARAM_DATATYPE)
+    @pytest.mark.parametrize("upload_or_download", ["upload", "download"])
+    def test_combinations_filesystem_transfer(
         self,
-        project_and_test_information,
+        pathtable_and_project,
         sub_names,
         ses_names,
         datatype,
-#        upload_or_download,
+        upload_or_download,
     ):
-        """
-        Parse the arguments to filter the pathtable, getting
-        the files expected to be transferred passed on the arguments
-        Note files in sub/ses/datatype folders must be handled
-        separately to those in non-sub, non-ses, non-datatype folders
+        """ """
+        pathtable, project = pathtable_and_project
 
-        see test_utils.swap_local_and_central_paths() for the logic
-        on setting up and swapping local / central paths for
-        upload / download tests.
-        """
-        pathtable, project, testing_ssh = project_and_test_information
+        transfer_function = test_utils.handle_upload_or_download(
+            project,
+            upload_or_download,
+            transfer_method="custom",
+            swap_last_folder_only=False,
+        )[0]
 
+        transfer_function("rawdata", sub_names, ses_names, datatype, init_log=False)
 
-  #      transfer_function = test_utils.handle_upload_or_download(
-   #         project,
-    #        upload_or_download,
-     #       swap_last_folder_only=testing_ssh,
-      #  )[0]
+        if upload_or_download == "download":
+            test_utils.swap_local_and_central_paths(
+                project, swap_last_folder_only=False
+            )
 
+        expected_transferred_paths = self.get_expected_transferred_paths(
+            pathtable, sub_names, ses_names, datatype
+        )
+
+        # Check what paths were actually moved
+        # (through the local filesystem), and test
+        path_to_search = (
+            self.central_from_local(project.cfg["local_path"]) / "rawdata"
+        )
+        all_transferred = path_to_search.glob("**/*")
+        paths_to_transferred_files = list(
+            filter(Path.is_file, all_transferred)
+        )
+
+        assert sorted(paths_to_transferred_files) == sorted(
+            expected_transferred_paths
+        )
+
+        # Teardown here, because we have session scope.
+        try:
+            shutil.rmtree(self.central_from_local(project.cfg["local_path"]))
+        except FileNotFoundError:
+            pass
+
+    @pytest.mark.parametrize("sub_names", PARAM_SUBS)
+    @pytest.mark.parametrize("ses_names", PARAM_SES)
+    @pytest.mark.parametrize("datatype", PARAM_DATATYPE)
+    def test_combinations_ssh_transfer(
+        self,
+        ssh_setup,
+        sub_names,
+        ses_names,
+        datatype,
+    ):
+        """ """
+        pathtable, project = ssh_setup
+
+        true_central_path = project.cfg["central_path"]
+        tmp_central_path = project.cfg["central_path"] / "tmp"
+        project.update_config("central_path", tmp_central_path)
+
+        breakpoint()
         project.upload(sub_names, ses_names, datatype, init_log=False)
-        # transfer_function(sub_names, ses_names, datatype, init_log=False)
 
-       # if upload_or_download == "download":
-        #    test_utils.swap_local_and_central_paths(
-         #       project, swap_last_folder_only=testing_ssh
-          #  )
+        expected_transferred_paths = self.get_expected_transferred_paths(
+            pathtable, sub_names, ses_names, datatype
+        )
 
+        transferred_files = ssh_test_utils.recursive_search_central(project)
+
+        paths_to_transferred_files = self.remove_path_before_rawdata(
+            transferred_files
+        )
+
+        expected_transferred_paths_ = self.remove_path_before_rawdata(
+            expected_transferred_paths
+        )
+
+        assert sorted(paths_to_transferred_files) == sorted(
+            expected_transferred_paths_
+        )
+
+        with paramiko.SSHClient() as client:
+            ssh.connect_client(client, project.cfg)
+            client.exec_command(
+                f"rm -rf {(tmp_central_path).as_posix()}"
+            )  # TODO: own function as need to do on teardown)
+
+        true_local_path = project.cfg["local_path"]
+        tmp_local_path = project.cfg["local_path"] / "tmp"
+        tmp_local_path.mkdir()
+        project.update_config("local_path", tmp_local_path)
+        project.update_config("central_path", true_central_path)
+
+        project.download(
+            sub_names, ses_names, datatype, init_log=False
+        )  # TODO: why is this connecting so many times? [during search - make issue]
+
+        all_transferred = list((tmp_local_path / "rawdata").glob("**/*"))
+        all_transferred = [
+            path_ for path_ in all_transferred if path_.is_file()
+        ]
+
+        paths_to_transferred_files = self.remove_path_before_rawdata(
+            all_transferred
+        )
+
+        assert sorted(paths_to_transferred_files) == sorted(
+            expected_transferred_paths_
+        )
+
+        shutil.rmtree(tmp_local_path)
+        project.update_config("local_path", true_local_path)
+
+    # ---------------------------------------------------------------------------------------------------------------
+    # Utils
+    # ---------------------------------------------------------------------------------------------------------------
+
+    def get_expected_transferred_paths(
+        self, pathtable, sub_names, ses_names, datatype
+    ):
+        """"""
         parsed_sub_names = self.parse_arguments(pathtable, sub_names, "sub")
         parsed_ses_names = self.parse_arguments(pathtable, ses_names, "ses")
         parsed_datatype = self.parse_arguments(pathtable, datatype, "datatype")
@@ -184,7 +231,9 @@ class TestFileTransfer:
         (
             sub_ses_dtype_arguments,
             extra_arguments,
-        ) = self.make_pathtable_search_filter(parsed_sub_names, parsed_ses_names, parsed_datatype)
+        ) = self.make_pathtable_search_filter(
+            parsed_sub_names, parsed_ses_names, parsed_datatype
+        )
 
         datatype_folders = self.query_table(pathtable, sub_ses_dtype_arguments)
         extra_folders = self.query_table(pathtable, extra_arguments)
@@ -197,96 +246,14 @@ class TestFileTransfer:
         )
         expected_transferred_paths = central_base_paths / expected_paths.path
 
-        # When transferring with SSH, there is a delay before
-        # filesystem catches up
-      #  if testing_ssh:
-       #     time.sleep(0.5)
+        return expected_transferred_paths
 
-        # Check what paths were actually moved
-        # (through the local filesystem), and test
-        def sftp_recursive_search(sftp, path_, all_filenames):
-            try:
-                sftp.stat(path_)
-            except FileNotFoundError:
-                return
-
-            for file_or_folder in sftp.listdir_attr(path_):
-                if stat.S_ISDIR(file_or_folder.st_mode):
-                    sftp_recursive_search(
-                        sftp,
-                        path_ + "/" + file_or_folder.filename,
-                        all_filenames,
-                    )
-                else:
-                    all_filenames.append(path_ + "/" + file_or_folder.filename)
-
-        with paramiko.SSHClient() as client:
-            ssh.connect_client(client, project.cfg)
-
-            sftp = client.open_sftp()
-
-            all_filenames = []
-
-            sftp_recursive_search(
-                sftp,
-                (project.cfg["central_path"] / "rawdata").as_posix(),
-                all_filenames,
-            )
-
-            paths_to_transferred_files = []
-            for path_ in all_filenames:
-                parts = Path(path_).parts
-                paths_to_transferred_files.append(
-                    Path(*parts[parts.index("rawdata") :])
-                )
-
-            expected_transferred_paths_ = []
-            for path_ in expected_transferred_paths:
-                parts = Path(path_).parts
-                expected_transferred_paths_.append(
-                    Path(*parts[parts.index("rawdata") :])
-                )
-
-            assert sorted(paths_to_transferred_files) == sorted(
-                expected_transferred_paths_
-            )
-
-        project.upload_all()
-        shutil.rmtree(project.cfg["local_path"] / "rawdata")  # TOOD: var
-
-        breakpoint()
-
-        true_local_path = project.cfg["local_path"]
-        tmp_local_path = project.cfg["local_path"] / "tmp_local"
-        tmp_local_path.mkdirs()
-        project.update_config("local_path", tmp_local_path)
-
-        project.download(sub_names, ses_names, datatype, init_log=False)  # TODO: why is this connecting so many times?
-
-        all_transferred = list((project.cfg["local_path"] / "rawdata").glob("**/*"))
-        all_transferred = [path_ for path_ in all_transferred if path_.is_file()]
-
-        paths_to_transferred_files = []
-        for path_ in all_transferred:  # TODO: rename all filenames
+    def remove_path_before_rawdata(self, list_of_paths):
+        cut_paths = []
+        for path_ in list_of_paths:  # TODO: rename all filenames
             parts = Path(path_).parts
-            paths_to_transferred_files.append(
-                Path(*parts[parts.index("rawdata"):])
-            )
-
-        assert sorted(paths_to_transferred_files) == sorted(expected_transferred_paths_)
-
-        shutil.rmtree(project.cfg["local_path"])  # TOOD: var
-
-        project.update_config("local_path", true_local_path)
-
-        with paramiko.SSHClient() as client:
-            ssh.connect_client(client, project.cfg)
-
-            client.exec_command(f"rm -rf {(project.cfg['central_path'] / 'rawdata').as_posix()}")  # TODO: own function as need to do on teardown)
-
-    # ---------------------------------------------------------------------------------------------------------------
-    # Utils
-    # ---------------------------------------------------------------------------------------------------------------
+            cut_paths.append(Path(*parts[parts.index("rawdata") :]))
+        return cut_paths
 
     def query_table(self, pathtable, arguments):
         """
