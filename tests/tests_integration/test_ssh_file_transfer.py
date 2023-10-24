@@ -11,8 +11,8 @@ import pytest
 import ssh_test_utils
 import test_utils
 from file_conflicts_pathtable import get_pathtable
-#from pytest import ssh_config
 
+# from pytest import ssh_config
 from datashuttle.utils import ssh
 
 TEST_SSH = True  # TODO: base on whether docker / singularity is installed.
