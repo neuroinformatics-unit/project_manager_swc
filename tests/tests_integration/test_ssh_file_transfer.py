@@ -12,10 +12,9 @@ import ssh_test_utils
 import test_utils
 from file_conflicts_pathtable import get_pathtable
 
-# from pytest import ssh_config
 from datashuttle.utils import ssh
 
-TEST_SSH = True  # TODO: base on whether docker / singularity is installed.
+TEST_SSH = ssh_test_utils.get_test_ssh()
 
 
 PARAM_SUBS = [
@@ -145,9 +144,10 @@ class TestFileTransfer:
         except FileNotFoundError:
             pass
 
-    @pytest.mark.parametrize("sub_names", PARAM_SUBS)
-    @pytest.mark.parametrize("ses_names", PARAM_SES)
-    @pytest.mark.parametrize("datatype", PARAM_DATATYPE)
+    @pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
+    @pytest.mark.parametrize("sub_names", [["all"], ["all_non_sub", "sub-002"]])
+    @pytest.mark.parametrize("ses_names", [["all"], ["ses-002_random-key"], ["all_non_ses"]])
+    @pytest.mark.parametrize("datatype", [["all"], ["anat", "all_ses_level_non_datatype"]])
     def test_combinations_ssh_transfer(
         self,
         ssh_setup,
@@ -155,14 +155,17 @@ class TestFileTransfer:
         ses_names,
         datatype,
     ):
-        """ """
+        """
+        This is very slow. maybe 8 s per test. Nearly all in the
+        upload() and download() part so unavoidable. Most code is shared,
+        this should be okay though my paranoid
+        """
         pathtable, project = ssh_setup
 
         true_central_path = project.cfg["central_path"]
-        tmp_central_path = project.cfg["central_path"] / "tmp"
+        tmp_central_path = project.cfg["central_path"] / "tmp" / project.project_name
         project.update_config("central_path", tmp_central_path)
 
-        breakpoint()
         project.upload(sub_names, ses_names, datatype, init_log=False)
 
         expected_transferred_paths = self.get_expected_transferred_paths(
@@ -187,17 +190,18 @@ class TestFileTransfer:
             ssh.connect_client(client, project.cfg)
             client.exec_command(
                 f"rm -rf {(tmp_central_path).as_posix()}"
-            )  # TODO: own function as need to do on teardown)
+            )
 
         true_local_path = project.cfg["local_path"]
-        tmp_local_path = project.cfg["local_path"] / "tmp"
-        tmp_local_path.mkdir()
+        tmp_local_path = project.cfg["local_path"] / "tmp" / project.project_name
+        tmp_local_path.mkdir(exist_ok=True, parents=True)
+
         project.update_config("local_path", tmp_local_path)
         project.update_config("central_path", true_central_path)
 
         project.download(
             sub_names, ses_names, datatype, init_log=False
-        )  # TODO: why is this connecting so many times? [during search - make issue]
+        )
 
         all_transferred = list((tmp_local_path / "rawdata").glob("**/*"))
         all_transferred = [

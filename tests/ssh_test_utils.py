@@ -1,7 +1,13 @@
 import builtins
 import copy
+import platform
 import stat
-
+import subprocess
+import sys
+import warnings
+import os
+import subprocess
+from pathlib import Path
 import paramiko
 
 from datashuttle.utils import rclone, ssh
@@ -47,33 +53,54 @@ def restore_mock_input(orig_builtin):
     builtins.input = orig_builtin
 
 
-def setup_hostkeys(project):
+def setup_hostkeys(project, setup_ssh_key_pair=True):  # TODO: RENAME FUNCTION
     """
     Convenience function to verify the server hostkey.
+
+    This requires monkeypatching a number of functions involved
+    in the SSH setup process. `input()` is patched to always
+    return the required hostkey confirmation "y". `getpass()` is
+    patched to allways return the password for the container in which
+    SSH tests are run. `isatty()` is patched because when running this
+    for some reason it appears to be in a TTY - this might be a
+    container thing.
     """
+    # Monkeypatch
     orig_builtin = setup_mock_input(input_="y")
-    ssh.verify_ssh_central_host(
-        project.cfg["central_host_id"], project.cfg.hostkeys_path, log=True
-    )
-    restore_mock_input(orig_builtin)
 
     orig_getpass = copy.deepcopy(ssh.getpass.getpass)
     ssh.getpass.getpass = lambda _: "password"  # type: ignore
 
-    ssh.setup_ssh_key(project.cfg, log=False)
+    orig_isatty = copy.deepcopy(sys.stdin.isatty)
+    sys.stdin.isatty = lambda: True
+
+    # Run setup
+    verified = ssh.verify_ssh_central_host(
+        project.cfg["central_host_id"], project.cfg.hostkeys_path, log=True
+    )
+
+    if setup_ssh_key_pair:
+        ssh.setup_ssh_key(project.cfg, log=False)
+
+    # Restore functions
+    restore_mock_input(orig_builtin)
     ssh.getpass.getpass = orig_getpass
+    sys.stdin.isatty = orig_isatty
+
+    return verified
 
 
 def build_docker_image(project):
-    import os
-    import subprocess
-    from pathlib import Path
+    """"""
+    container_software = is_docker_or_singularity_installed()
+    assert container_software is not False, ("docker or singularity not installed, "
+                                             "this should be checked at the top of test script")
 
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
-    subprocess.run("docker build -t ssh_server .", shell=True)
+    subprocess.run(f"{container_software} build -t ssh_server .", shell=True)
     subprocess.run(
-        "docker run -d -p 22:22 ssh_server", shell=True
+        f"{container_software} run -d -p 22:22 ssh_server", shell=True
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
 
     setup_project_for_ssh(
@@ -116,3 +143,32 @@ def recursive_search_central(project):
             all_filenames,
         )
     return all_filenames
+
+
+def get_test_ssh():
+    """"""
+    if is_docker_or_singularity_installed():
+        test_ssh = True
+    else:
+        warnings.warn("SSH tests are not run as docker (Windows, macOS) "
+                      "or singularity (Linux) is not installed.")
+        test_ssh = False
+
+    return test_ssh
+
+
+def is_docker_or_singularity_installed():  # TODO: need to test
+    """"""
+    check_install = lambda command: subprocess.run(
+        command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    ).returncode == 0
+
+    installed = False
+    if platform.system() == "Linux":
+        if check_install("singularity version"):
+            installed = "singularity"
+    else:
+        if check_install("docker -v"):
+            installed = "docker"
+
+    return installed

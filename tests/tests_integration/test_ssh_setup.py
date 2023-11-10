@@ -1,9 +1,3 @@
-"""
-SSH configs are set in conftest.py . The password
-should be stored in a file called test_ssh_password.txt located
-in the same folder as test_ssh.py
-"""
-
 import pytest
 import ssh_test_utils
 import test_utils
@@ -11,10 +5,10 @@ import test_utils
 # from pytest import ssh_config
 from datashuttle.utils import ssh
 
-TEST_SSH = True
+TEST_SSH = ssh_test_utils.get_test_ssh()
 
 
-@pytest.mark.skipif(TEST_SSH is False, reason="TEST_SSH is false")
+@pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
 class TestSSH:
     @pytest.fixture(scope="function")
     def project(test, tmp_path):
@@ -29,12 +23,7 @@ class TestSSH:
             tmp_path, test_project_name
         )
 
-        ssh_test_utils.setup_project_for_ssh(
-            project,
-            central_path=f"/home/sshuser/datashuttle/{project.project_name}",  # TODO: centralise these
-            central_host_id="localhost",
-            central_host_username="sshuser",
-        )
+        ssh_test_utils.build_docker_image(project)  # TODO: rename function
 
         yield project
         test_utils.teardown_project(cwd, project)
@@ -71,16 +60,14 @@ class TestSSH:
         and check hostkey is successfully accepted and written to configs.
         """
         test_utils.clear_capsys(capsys)
-        orig_builtin = ssh_test_utils.setup_mock_input(input_="y")
 
-        verified = ssh.verify_ssh_central_host(
-            project.cfg["central_host_id"], project.cfg.hostkeys_path, log=True
+        verified = ssh_test_utils.setup_hostkeys(
+            project, setup_ssh_key_pair=False
         )
-
-        ssh_test_utils.restore_mock_input(orig_builtin)
 
         assert verified
         captured = capsys.readouterr()
+
         assert captured.out == "Host accepted.\n"
 
         with open(project.cfg.hostkeys_path, "r") as file:
