@@ -16,7 +16,6 @@ from datashuttle.utils import ssh
 
 TEST_SSH = ssh_test_utils.get_test_ssh()
 
-
 PARAM_SUBS = [
     ["all"],
     ["all_sub"],
@@ -50,7 +49,10 @@ class TestFileTransfer:
         scope="class",
     )
     def pathtable_and_project(self, tmpdir_factory):
-        """ """
+        """
+        Create a new test project with a test project folder
+        and file structure (see `get_pathtable()` for definition).
+        """
         tmp_path = tmpdir_factory.mktemp("test")
 
         base_path = tmp_path / "test with space"
@@ -72,7 +74,11 @@ class TestFileTransfer:
         scope="class",
     )
     def ssh_setup(self, pathtable_and_project):
-        """ """
+        """
+        After initial project setup (in `pathtable_and_project`)
+        setup a container and the project's SSH connection to the container.
+        Then upload the test project to the `central_path`.
+        """
         pathtable, project = pathtable_and_project
         ssh_test_utils.setup_project_and_container_for_ssh(project)
         ssh_test_utils.setup_ssh_connection(project)
@@ -80,13 +86,6 @@ class TestFileTransfer:
         project.upload_all()
 
         return [pathtable, project]
-
-    # ----------------------------------------------------------------------------------
-    # Utils
-    # ----------------------------------------------------------------------------------
-
-    def central_from_local(self, path_):
-        return Path(str(copy.copy(path_)).replace("local", "central"))
 
     # ----------------------------------------------------------------------------------
     # Test File Transfer - All Options
@@ -104,7 +103,13 @@ class TestFileTransfer:
         datatype,
         upload_or_download,
     ):
-        """ """
+        """
+        Test many combinations of possible file transfer commands. The
+        entire test project is created in the original `local_path`
+        and subset of it is uploaded and tested against. To test
+        upload vs. download, the `local_path` and `central_path`
+        locations are swapped.
+        """
         pathtable, project = pathtable_and_project
 
         # Transfer the data, swapping the paths to move a subset of
@@ -171,9 +176,15 @@ class TestFileTransfer:
         datatype,
     ):
         """
-        This is very slow. maybe 8 s per test. Nearly all in the
-        upload() and download() part so unavoidable. Most code is shared,
-        this should be okay though my paranoid
+        Test a subset of argument combinations while testing over SSH connection
+        to a container. This is very slow, due to the rclone ssh transfer (which
+        is performed twice in this test, once for upload, once for download), around
+        8 seconds per parameterization.
+
+        In test setup, the entire project is created in the `local_path` and
+        is uploaded to `central_path`. So we only need to set up once per test,
+        upload and download is to temporary folders and these temporary folders
+        are cleaned at the end of each parameterization.
         """
         pathtable, project = ssh_setup
 
@@ -364,3 +375,6 @@ class TestFileTransfer:
             filepath = pathtable["base_folder"][i] / pathtable["path"][i]
             filepath.parents[0].mkdir(parents=True, exist_ok=True)
             test_utils.write_file(filepath, contents="test_entry")
+
+    def central_from_local(self, path_):
+        return Path(str(copy.copy(path_)).replace("local", "central"))
