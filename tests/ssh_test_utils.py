@@ -53,7 +53,7 @@ def restore_mock_input(orig_builtin):
     builtins.input = orig_builtin
 
 
-def setup_hostkeys(project, setup_ssh_key_pair=True):  # TODO: RENAME FUNCTION
+def setup_ssh_connection(project, setup_ssh_key_pair=True):
     """
     Convenience function to verify the server hostkey.
 
@@ -90,7 +90,7 @@ def setup_hostkeys(project, setup_ssh_key_pair=True):  # TODO: RENAME FUNCTION
     return verified
 
 
-def build_docker_image(project):
+def setup_project_and_container_for_ssh(project):
     """"""
     container_software = is_docker_or_singularity_installed()
     assert container_software is not False, (
@@ -161,7 +161,7 @@ def get_test_ssh():
     return test_ssh
 
 
-def is_docker_or_singularity_installed():  # TODO: need to test
+def is_docker_or_singularity_installed():
     """"""
     check_install = (
         lambda command: subprocess.run(

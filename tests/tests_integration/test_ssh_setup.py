@@ -23,7 +23,7 @@ class TestSSH:
             tmp_path, test_project_name
         )
 
-        ssh_test_utils.build_docker_image(project)  # TODO: rename function
+        ssh_test_utils.setup_project_and_container_for_ssh(project)
 
         yield project
         test_utils.teardown_project(cwd, project)
@@ -61,7 +61,7 @@ class TestSSH:
         """
         test_utils.clear_capsys(capsys)
 
-        verified = ssh_test_utils.setup_hostkeys(
+        verified = ssh_test_utils.setup_ssh_connection(
             project, setup_ssh_key_pair=False
         )
 
