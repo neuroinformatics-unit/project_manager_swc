@@ -145,9 +145,15 @@ class TestFileTransfer:
             pass
 
     @pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
-    @pytest.mark.parametrize("sub_names", [["all"], ["all_non_sub", "sub-002"]])
-    @pytest.mark.parametrize("ses_names", [["all"], ["ses-002_random-key"], ["all_non_ses"]])
-    @pytest.mark.parametrize("datatype", [["all"], ["anat", "all_ses_level_non_datatype"]])
+    @pytest.mark.parametrize(
+        "sub_names", [["all"], ["all_non_sub", "sub-002"]]
+    )
+    @pytest.mark.parametrize(
+        "ses_names", [["all"], ["ses-002_random-key"], ["all_non_ses"]]
+    )
+    @pytest.mark.parametrize(
+        "datatype", [["all"], ["anat", "all_ses_level_non_datatype"]]
+    )
     def test_combinations_ssh_transfer(
         self,
         ssh_setup,
@@ -163,7 +169,9 @@ class TestFileTransfer:
         pathtable, project = ssh_setup
 
         true_central_path = project.cfg["central_path"]
-        tmp_central_path = project.cfg["central_path"] / "tmp" / project.project_name
+        tmp_central_path = (
+            project.cfg["central_path"] / "tmp" / project.project_name
+        )
         project.update_config("central_path", tmp_central_path)
 
         project.upload(sub_names, ses_names, datatype, init_log=False)
@@ -188,20 +196,18 @@ class TestFileTransfer:
 
         with paramiko.SSHClient() as client:
             ssh.connect_client(client, project.cfg)
-            client.exec_command(
-                f"rm -rf {(tmp_central_path).as_posix()}"
-            )
+            client.exec_command(f"rm -rf {(tmp_central_path).as_posix()}")
 
         true_local_path = project.cfg["local_path"]
-        tmp_local_path = project.cfg["local_path"] / "tmp" / project.project_name
+        tmp_local_path = (
+            project.cfg["local_path"] / "tmp" / project.project_name
+        )
         tmp_local_path.mkdir(exist_ok=True, parents=True)
 
         project.update_config("local_path", tmp_local_path)
         project.update_config("central_path", true_central_path)
 
-        project.download(
-            sub_names, ses_names, datatype, init_log=False
-        )
+        project.download(sub_names, ses_names, datatype, init_log=False)
 
         all_transferred = list((tmp_local_path / "rawdata").glob("**/*"))
         all_transferred = [
