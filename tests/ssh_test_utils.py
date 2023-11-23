@@ -102,7 +102,9 @@ def setup_project_and_container_for_ssh(project):
     os.chdir(image_path)
     breakpoint()
     subprocess.run(f"{container_software} build ssh_server .", shell=True)
-    subprocess.run(f"{container_software} run ssh_server", shell=True)  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
+    subprocess.run(
+        f"{container_software} run ssh_server", shell=True
+    )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
 
     setup_project_for_ssh(
         project,
