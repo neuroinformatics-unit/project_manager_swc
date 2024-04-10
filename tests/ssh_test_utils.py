@@ -20,12 +20,11 @@ def setup_project_for_ssh(
     to central
     """
     project.update_config_file(
+        connection_method="ssh",
         central_path=central_path,
+        central_host_id=central_host_id,
+        central_host_username=central_host_username,
     )
-    project.update_config_file(central_host_id=central_host_id)
-    project.update_config_file(central_host_username=central_host_username)
-    project.update_config_file(connection_method="ssh")
-
     rclone.setup_rclone_config_for_ssh(
         project.cfg,
         project.cfg.get_rclone_config_name("ssh"),
