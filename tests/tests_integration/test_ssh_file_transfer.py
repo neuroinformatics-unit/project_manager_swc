@@ -83,7 +83,7 @@ class TestFileTransfer:
         ssh_test_utils.setup_project_and_container_for_ssh(project)
         ssh_test_utils.setup_ssh_connection(project)
 
-        project.upload_all()
+        project.upload_rawdata()
 
         return [pathtable, project]
 
@@ -122,7 +122,9 @@ class TestFileTransfer:
             swap_last_folder_only=False,
         )[0]
 
-        transfer_function("rawdata", sub_names, ses_names, datatype, init_log=False)
+        transfer_function(
+            "rawdata", sub_names, ses_names, datatype, init_log=False
+        )
 
         if upload_or_download == "download":
             test_utils.swap_local_and_central_paths(
@@ -196,7 +198,9 @@ class TestFileTransfer:
         )
         project.update_config("central_path", tmp_central_path)
 
-        project.upload(sub_names, ses_names, datatype, init_log=False)
+        project.upload_custom(
+            "rawdata", sub_names, ses_names, datatype, init_log=False
+        )
 
         expected_transferred_paths = self.get_expected_transferred_paths(
             pathtable, sub_names, ses_names, datatype
@@ -225,7 +229,9 @@ class TestFileTransfer:
         project.update_config("local_path", tmp_local_path)
         project.update_config("central_path", true_central_path)
 
-        project.download(sub_names, ses_names, datatype, init_log=False)
+        project.download_custom(
+            "rawdata", sub_names, ses_names, datatype, init_log=False
+        )
 
         # Find the transferred paths, tidy them up
         # and check expected paths were transferred.
@@ -281,7 +287,7 @@ class TestFileTransfer:
         expected_paths = pd.concat([datatype_folders, extra_folders])
         expected_paths = expected_paths.drop_duplicates(subset="path")
 
-        expected_paths = self.remove_path_before_rawdata(expected_paths)
+        expected_paths = self.remove_path_before_rawdata(expected_paths.path)
 
         return expected_paths
 
@@ -309,7 +315,7 @@ class TestFileTransfer:
                         ]
                     else:
                         for dtype in datatype:
-                            if dtype == "all_ses_level_non_datatype":
+                            if dtype == "all_non_datatype":
                                 extra_arguments += [
                                     f"(parent_sub == '{sub}' & parent_ses == '{ses}' "
                                     f"& is_ses_level_non_datatype == True)"
