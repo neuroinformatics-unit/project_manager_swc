@@ -1,7 +1,6 @@
 import builtins
 import copy
 import os
-import platform
 import stat
 import subprocess
 import sys
@@ -92,18 +91,17 @@ def setup_ssh_connection(project, setup_ssh_key_pair=True):
 
 def setup_project_and_container_for_ssh(project):
     """"""
-    container_software = is_docker_or_singularity_installed()
-    assert container_software is not False, (
-        "docker or singularity not installed, "
+    assert is_docker_installed(), (
+        "docker not installed, "
         "this should be checked at the top of test script"
     )
 
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
 
-    subprocess.run(f"{container_software} build ssh_server .", shell=True)
+    subprocess.run("docker build ssh_server .", shell=True)
     subprocess.run(
-        f"{container_software} run ssh_server", shell=True
+        "docker run ssh_server", shell=True
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
 
     setup_project_for_ssh(
@@ -150,19 +148,13 @@ def recursive_search_central(project):
 
 def get_test_ssh():
     """"""
-    if is_docker_or_singularity_installed():
-        test_ssh = True
-    else:
-        warnings.warn(
-            "SSH tests are not run as docker (Windows, macOS) "
-            "or singularity (Linux) is not installed."
-        )
-        test_ssh = False
-
-    return test_ssh
+    docker_installed = is_docker_installed()
+    if not docker_installed:
+        warnings.warn("SSH tests are not run as docker is not installed.")
+    return docker_installed
 
 
-def is_docker_or_singularity_installed():
+def is_docker_installed():
     """"""
     check_install = (
         lambda command: subprocess.run(
@@ -173,13 +165,4 @@ def is_docker_or_singularity_installed():
         ).returncode
         == 0
     )
-
-    installed = False
-    if platform.system() == "Linux":
-        if check_install("singularity version"):
-            installed = "singularity"
-    else:
-        if check_install("docker -v"):
-            installed = "docker"
-
-    return installed
+    return check_install("docker -v")
