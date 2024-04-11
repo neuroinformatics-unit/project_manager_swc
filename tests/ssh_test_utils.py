@@ -99,9 +99,12 @@ def setup_project_and_container_for_ssh(project):
     os.chdir(image_path)
 
     subprocess.run("docker build ssh_server .", shell=True)
-    subprocess.run(
-        "docker run ssh_server", shell=True
+    subprocess.Popen(
+        "docker run -p 22:22 ssh_server", shell=True
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
+    import time
+
+    time.sleep(10)
 
     setup_project_for_ssh(
         project,
@@ -131,7 +134,7 @@ def sftp_recursive_file_search(sftp, path_, all_filenames):
 def recursive_search_central(project):
     """ """
     with paramiko.SSHClient() as client:
-        ssh.connect_client(client, project.cfg)
+        ssh.connect_client_core(client, project.cfg)
 
         sftp = client.open_sftp()
 

@@ -168,7 +168,7 @@ class TestFileTransfer:
         "ses_names", [["all"], ["ses-002_random-key"], ["all_non_ses"]]
     )
     @pytest.mark.parametrize(
-        "datatype", [["all"], ["anat", "all_ses_level_non_datatype"]]
+        "datatype", [["all"], ["anat", "all_non_datatype"]]
     )
     def test_combinations_ssh_transfer(
         self,
@@ -196,7 +196,11 @@ class TestFileTransfer:
         tmp_central_path = (
             project.cfg["central_path"] / "tmp" / project.project_name
         )
-        project.update_config("central_path", tmp_central_path)
+        project.get_logging_path().mkdir(
+            parents=True, exist_ok=True
+        )  # TODO: why is this necessary
+
+        project.update_config_file(central_path=tmp_central_path)
 
         project.upload_custom(
             "rawdata", sub_names, ses_names, datatype, init_log=False
@@ -209,7 +213,6 @@ class TestFileTransfer:
         # Search the paths that were transferred and tidy them up,
         # then check against the paths that were expected to be transferred.
         transferred_files = ssh_test_utils.recursive_search_central(project)
-
         paths_to_transferred_files = self.remove_path_before_rawdata(
             transferred_files
         )
@@ -226,8 +229,8 @@ class TestFileTransfer:
         )
         tmp_local_path.mkdir(exist_ok=True, parents=True)
 
-        project.update_config("local_path", tmp_local_path)
-        project.update_config("central_path", true_central_path)
+        project.update_config_file(local_path=tmp_local_path)
+        project.update_config_file(central_path=true_central_path)
 
         project.download_custom(
             "rawdata", sub_names, ses_names, datatype, init_log=False
@@ -251,12 +254,18 @@ class TestFileTransfer:
         # Clean up, removing the temp directories and
         # resetting the project paths.
         with paramiko.SSHClient() as client:
-            ssh.connect_client(client, project.cfg)
+            ssh.connect_client_core(client, project.cfg)
             client.exec_command(f"rm -rf {(tmp_central_path).as_posix()}")
 
         shutil.rmtree(tmp_local_path)
 
-        project.update_config("local_path", true_local_path)
+        project.get_logging_path().mkdir(
+            parents=True, exist_ok=True
+        )  # TODO: why is this necessary
+        project.update_config_file(local_path=true_local_path)
+        project.get_logging_path().mkdir(
+            parents=True, exist_ok=True
+        )  # TODO: why is this necessary
 
     # ----------------------------------------------------------------------------------
     # Utils
