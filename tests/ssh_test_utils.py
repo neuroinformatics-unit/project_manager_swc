@@ -99,7 +99,7 @@ def setup_project_and_container_for_ssh(project):
     os.chdir(image_path)
 
     subprocess.run("docker build ssh_server .", shell=True)
-    subprocess.Popen(
+    subprocess.run(
         "docker run -p 22:22 ssh_server", shell=True
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
     import time
