@@ -98,13 +98,19 @@ def setup_project_and_container_for_ssh(project):
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
 
-    build_output = subprocess.run("docker build -t ssh_server .", shell=True, capture_output=True)
-    assert build_output.returncode == 0, f"docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
+    build_output = subprocess.run(
+        "docker build -t ssh_server .", shell=True, capture_output=True
+    )
+    assert (
+        build_output.returncode == 0
+    ), f"docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
 
     run_output = subprocess.run(
         "docker run -d -p 22:22 ssh_server", shell=True, capture_output=True
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
-    assert run_output.returncode == 0, f"docker run failed with: STDOUT-{run_output.stdout} STDERR-{run_output.stderr}"
+    assert (
+        run_output.returncode == 0
+    ), f"docker run failed with: STDOUT-{run_output.stdout} STDERR-{run_output.stderr}"
 
     setup_project_for_ssh(
         project,
