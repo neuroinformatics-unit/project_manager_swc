@@ -179,7 +179,7 @@ def connect_client_with_logging(
                 f"Connection to { cfg['central_host_id']} made successfully."
             )
 
-    except Exception:
+    except Exception as e:
         utils.log_and_raise_error(
             f"Could not connect to server. Ensure that \n"
             f"1) You have run setup_ssh_connection() \n"
@@ -187,7 +187,8 @@ def connect_client_with_logging(
             f"3) The central_host_id: {cfg['central_host_id']} is"
             f" correct.\n"
             f"4) The central username:"
-            f" {cfg['central_host_username']}, and password are correct.",
+            f" {cfg['central_host_username']}, and password are correct."
+            f"Original error: {e}",
             ConnectionError,
         )
 
