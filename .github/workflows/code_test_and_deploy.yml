@@ -45,6 +45,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install .[dev]
+      - name: Shutdown Ubuntu MySQL (SUDO)  # free up port  3306 for ssh tests: https://github.com/orgs/community/discussions/25550
+        run: sudo service mysql stop # Shutdown the Default MySQL, "sudo" is necessary, please not remove it
       - name: Test
         run: pytest
 

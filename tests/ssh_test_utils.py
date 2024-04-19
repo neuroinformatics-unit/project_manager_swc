@@ -105,8 +105,9 @@ def setup_project_and_container_for_ssh(project):
         build_output.returncode == 0
     ), f"docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
 
+    # ports - https://github.com/orgs/community/discussions/25550
     run_output = subprocess.run(
-        "docker run -d -p 22:22 ssh_server", shell=True, capture_output=True
+        "docker run -d -p 3306:22 ssh_server", shell=True, capture_output=True
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
     assert (
         run_output.returncode == 0
