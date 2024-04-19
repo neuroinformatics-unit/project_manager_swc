@@ -30,7 +30,9 @@ def connect_client_core(
     password: Optional[str] = None,
 ):
     client.get_host_keys().load(cfg.hostkeys_path.as_posix())
-    client.set_missing_host_key_policy(paramiko.RejectPolicy())
+    client.set_missing_host_key_policy(
+        paramiko.AutoAddPolicy()
+    )  # AutoAddPolicy"!! REMOVE!!! TESTING!!
 
     client.connect(
         cfg["central_host_id"],
