@@ -101,10 +101,12 @@ def setup_project_and_container_for_ssh(project):
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
 
+    # TODO: tidy
     add_sudo = "sudo" if platform.system() == "Linux" else ""
+    add_tag = "-t" if platform.system() == "Linux" else ""
 
     build_output = subprocess.run(
-        f"{add_sudo} docker build -t ssh_server .",
+        f"{add_sudo} docker build {add_tag} ssh_server .",
         shell=True,
         capture_output=True,
     )
