@@ -25,7 +25,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]  # TODO: add these back in after tests... windows-latest, macos-latest, macos-14,
+        os: [windows-latest, macos-latest, macos-14, ubuntu-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
@@ -46,7 +46,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev]
       - name: Shutdown Ubuntu MySQL (SUDO)  # free up port  3306 for ssh tests: https://github.com/orgs/community/discussions/25550
-        run: sudo service mysql stop # Shutdown the Default MySQL, "sudo" is necessary, please not remove it
+        run: |
+             if [ "$RUNNER_OS" == "Linux" ]; then
+                sudo service mysql stop
+             fi
       - name: Test
         run: pytest -k test_combinations_ssh_transfer
 

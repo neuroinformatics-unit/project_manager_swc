@@ -1,6 +1,7 @@
 import builtins
 import copy
 import os
+import platform
 import stat
 import subprocess
 import sys
@@ -100,22 +101,26 @@ def setup_project_and_container_for_ssh(project):
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
 
+    add_sudo = "sudo" if platform.system() == "Linux" else ""
+
     build_output = subprocess.run(
-        "sudo docker build -t ssh_server .", shell=True, capture_output=True
+        f"{add_sudo} docker build -t ssh_server .",
+        shell=True,
+        capture_output=True,
     )
     assert (
         build_output.returncode == 0
-    ), f"sudo docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
+    ), f"docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
 
     run_output = subprocess.run(
-        f"sudo docker run -d -p {PORT}:22 ssh_server",
+        f"{add_sudo} docker run -d -p {PORT}:22 ssh_server",
         shell=True,
         capture_output=True,
-    )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
+    )
 
     assert (
         run_output.returncode == 0
-    ), f"sudo docker run failed with: STDOUT-{run_output.stdout} STDERR-{run_output.stderr}"
+    ), f"docker run failed with: STDOUT-{run_output.stdout} STDERR-{run_output.stderr}"
 
     setup_project_for_ssh(
         project,
