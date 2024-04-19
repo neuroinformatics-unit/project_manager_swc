@@ -3,13 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from datashuttle.configs.config_class import Configs
 
 import fnmatch
 import getpass
 import stat
 import sys
-from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
 import paramiko
@@ -32,18 +33,12 @@ def connect_client_core(
     client.get_host_keys().load(cfg.hostkeys_path.as_posix())
     client.set_missing_host_key_policy(
         paramiko.AutoAddPolicy()
-    )  # AutoAddPolicy"!! REMOVE!!! TESTING!!
+    )  # TODO: ADDBACK IN!! RejectPolicy
 
     client.connect(
         cfg["central_host_id"],
         username=cfg["central_host_username"],
-        password=password,
-        key_filename=(
-            cfg.ssh_key_path.as_posix()
-            if isinstance(cfg.ssh_key_path, Path)
-            else None
-        ),
-        look_for_keys=True,
+        password="password",  # TODO: ADDBACK IN!! RejectPolicy
     )
 
 
