@@ -11,7 +11,7 @@ RUN apt-get install nano
 RUN useradd -rm -d /home/sshuser -s /bin/bash -g root -G sudo -u 1000 sshuser
 
 # Set the SSH user's password (replace "password" with your desired password)
-RUN echo 'sshuser:password'
+RUN echo "sshuser:password" | chpasswd
 
 # Allow SSH access
 RUN mkdir /var/run/sshd
