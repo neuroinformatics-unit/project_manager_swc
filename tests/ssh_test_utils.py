@@ -11,6 +11,9 @@ import paramiko
 
 from datashuttle.utils import rclone, ssh
 
+PORT = 3306  # https://github.com/orgs/community/discussions/25550
+os.environ["DS_SSH_PORT"] = str(PORT)
+
 
 def setup_project_for_ssh(
     project, central_path, central_host_id, central_host_username
@@ -65,7 +68,6 @@ def setup_ssh_connection(project, setup_ssh_key_pair=True):
     """
     # Monkeypatch
     orig_builtin = setup_mock_input(input_="y")
-
     orig_getpass = copy.deepcopy(ssh.getpass.getpass)
     ssh.getpass.getpass = lambda _: "password"  # type: ignore
 
@@ -105,12 +107,12 @@ def setup_project_and_container_for_ssh(project):
         build_output.returncode == 0
     ), f"sudo docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
 
-    # ports - https://github.com/orgs/community/discussions/25550
     run_output = subprocess.run(
-        "sudo docker run -d -p 3306:22 ssh_server",
+        f"sudo docker run -d -p {PORT}:22 ssh_server",
         shell=True,
         capture_output=True,
     )  # ; docker build -t ssh_server .", shell=True)  # ;docker run -p 22:22 ssh_server
+
     assert (
         run_output.returncode == 0
     ), f"sudo docker run failed with: STDOUT-{run_output.stdout} STDERR-{run_output.stderr}"

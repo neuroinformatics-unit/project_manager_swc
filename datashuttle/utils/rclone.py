@@ -3,11 +3,10 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Dict, List, Literal
 
+from datashuttle.configs import canonical_configs
 from datashuttle.configs.config_class import Configs
 from datashuttle.utils import utils
 from datashuttle.utils.custom_types import TopLevelFolder
-
-PORT = 3306  # TODO: direct copy!
 
 
 def call_rclone(command: str, pipe_std: bool = False) -> CompletedProcess:
@@ -101,7 +100,7 @@ def setup_rclone_config_for_ssh(
         f"sftp "
         f"host {cfg['central_host_id']} "
         f"user {cfg['central_host_username']} "
-        f"port {PORT} "
+        f"port {canonical_configs.get_default_ssh_port()} "
         f"key_file {ssh_key_path.as_posix()}",
         pipe_std=True,
     )

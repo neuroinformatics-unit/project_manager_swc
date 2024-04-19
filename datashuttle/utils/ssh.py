@@ -16,6 +16,7 @@ import paramiko
 
 PORT = 3306
 
+from datashuttle.configs import canonical_configs
 from datashuttle.utils import utils
 
 # -----------------------------------------------------------------------------
@@ -44,7 +45,7 @@ def connect_client_core(
             else None
         ),
         look_for_keys=True,
-        port=PORT,
+        port=canonical_configs.get_default_ssh_port(),
     )
 
 
@@ -86,7 +87,9 @@ def get_remote_server_key(central_host_id: str):
     connection.
     """
     transport: paramiko.Transport
-    with paramiko.Transport((central_host_id, PORT)) as transport:
+    with paramiko.Transport(
+        (central_host_id, canonical_configs.get_default_ssh_port())
+    ) as transport:
         transport.connect()
         key = transport.get_remote_server_key()
     return key
@@ -95,7 +98,9 @@ def get_remote_server_key(central_host_id: str):
 def save_hostkey_locally(key, central_host_id, hostkeys_path) -> None:
     client = paramiko.SSHClient()
     client.get_host_keys().add(
-        f"[{central_host_id}]:{PORT}", key.get_name(), key
+        f"[{central_host_id}]:{canonical_configs.get_default_ssh_port()}",
+        key.get_name(),
+        key,
     )
     client.get_host_keys().save(hostkeys_path.as_posix())
 
