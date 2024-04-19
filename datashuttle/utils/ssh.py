@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from datashuttle.configs.config_class import Configs
 
 import fnmatch
 import getpass
 import stat
 import sys
+from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
 import paramiko
@@ -31,14 +30,19 @@ def connect_client_core(
     password: Optional[str] = None,
 ):
     client.get_host_keys().load(cfg.hostkeys_path.as_posix())
-    client.set_missing_host_key_policy(
-        paramiko.AutoAddPolicy()
-    )  # TODO: ADDBACK IN!! RejectPolicy
+    client.set_missing_host_key_policy(paramiko.RejectPolicy())
 
     client.connect(
         cfg["central_host_id"],
         username=cfg["central_host_username"],
-        password="password",  # TODO: ADDBACK IN!! RejectPolicy
+        password=password,
+        key_filename=(
+            cfg.ssh_key_path.as_posix()
+            if isinstance(cfg.ssh_key_path, Path)
+            else None
+        ),
+        look_for_keys=True,
+        port=3306,
     )
 
 
@@ -80,7 +84,7 @@ def get_remote_server_key(central_host_id: str):
     connection.
     """
     transport: paramiko.Transport
-    with paramiko.Transport(central_host_id) as transport:
+    with paramiko.Transport((central_host_id, 3306)) as transport:
         transport.connect()
         key = transport.get_remote_server_key()
     return key
@@ -88,7 +92,9 @@ def get_remote_server_key(central_host_id: str):
 
 def save_hostkey_locally(key, central_host_id, hostkeys_path) -> None:
     client = paramiko.SSHClient()
-    client.get_host_keys().add(central_host_id, key.get_name(), key)
+    client.get_host_keys().add(
+        f"[{central_host_id}]:3306", key.get_name(), key
+    )
     client.get_host_keys().save(hostkeys_path.as_posix())
 
 
