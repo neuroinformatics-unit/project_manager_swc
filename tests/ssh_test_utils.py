@@ -101,12 +101,15 @@ def setup_project_and_container_for_ssh(project):
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
 
-    # TODO: tidy
-    add_sudo = "sudo" if platform.system() == "Linux" else ""
-    add_tag = "-t" if platform.system() == "Linux" else ""
+    if platform.system() == "Linux":
+        build_command = "sudo docker build ssh_server -f ."
+        run_command = f"sudo docker run -d -p {PORT}:22 ssh_server"
+    else:
+        build_command = "docker build ."
+        run_command = f"docker run -d -p {PORT}:22 ssh_server"
 
     build_output = subprocess.run(
-        f"{add_sudo} docker build {add_tag} ssh_server .",
+        build_command,
         shell=True,
         capture_output=True,
     )
@@ -115,7 +118,7 @@ def setup_project_and_container_for_ssh(project):
     ), f"docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
 
     run_output = subprocess.run(
-        f"{add_sudo} docker run -d -p {PORT}:22 ssh_server",
+        run_command,
         shell=True,
         capture_output=True,
     )
