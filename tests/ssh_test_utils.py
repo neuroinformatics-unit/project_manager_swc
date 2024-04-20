@@ -102,7 +102,7 @@ def setup_project_and_container_for_ssh(project):
     os.chdir(image_path)
 
     if platform.system() == "Linux":
-        build_command = "sudo docker build ssh_server -f ."
+        build_command = "sudo docker build -t ssh_server ."
         run_command = f"sudo docker run -d -p {PORT}:22 ssh_server"
     else:
         build_command = "docker build ."
