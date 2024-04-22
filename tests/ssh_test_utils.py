@@ -96,7 +96,7 @@ def setup_ssh_container(container_name):
     image_path = Path(__file__).parent / "ssh_test_images"
     os.chdir(image_path)
 
-    if platform.system() == "Linux":
+    if platform.system() != "Windows":
         build_command = "sudo docker build -t ssh_server ."
         run_command = (
             f"sudo docker run -d -p {PORT}:22 "
