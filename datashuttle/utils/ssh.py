@@ -14,8 +14,6 @@ from typing import Any, List, Optional, Tuple
 
 import paramiko
 
-PORT = 3306
-
 from datashuttle.configs import canonical_configs
 from datashuttle.utils import utils
 
