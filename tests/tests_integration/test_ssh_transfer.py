@@ -1,4 +1,6 @@
+import platform
 import shutil
+import subprocess
 
 import paramiko
 import pytest
@@ -13,6 +15,20 @@ TEST_SSH = ssh_test_utils.get_test_ssh()
 
 @pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
 class TestSSHTransfer(BaseTransfer):
+
+    @pytest.fixture(
+        scope="class",
+    )
+    def setup_ssh_container(self):
+        # Annoying session scope does not seem to actually work
+        container_name = "running_ssh_tests"
+        ssh_test_utils.setup_ssh_container(container_name)
+        yield
+
+        sudo = "sudo " if platform.system() == "Linux" else ""
+
+        subprocess.run(f"{sudo}docker stop {container_name}", shell=True)
+        subprocess.run(f"{sudo}rm {container_name}", shell=True)
 
     @pytest.fixture(
         scope="class",
