@@ -1,6 +1,7 @@
 import pytest
 import ssh_test_utils
 import test_utils
+from base import BaseTest
 
 # from pytest import ssh_config
 from datashuttle.utils import ssh
@@ -9,9 +10,9 @@ TEST_SSH = ssh_test_utils.get_test_ssh()
 
 
 @pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
-class TestSSH:
+class TestSSH(BaseTest):
     @pytest.fixture(scope="function")
-    def project(test, tmp_path):
+    def project(test, tmp_path, setup_ssh_container):
         """
         Make a project as per usual, but now add
         in test ssh configurations
@@ -23,7 +24,14 @@ class TestSSH:
             tmp_path, test_project_name
         )
 
-        ssh_test_utils.setup_project_and_container_for_ssh(project)
+        # ssh_test_utils.setup_project_and_container_for_ssh(project)
+
+        ssh_test_utils.setup_project_for_ssh(
+            project,
+            central_path=f"/home/sshuser/datashuttle/{project.project_name}",
+            central_host_id="localhost",
+            central_host_username="sshuser",
+        )
 
         yield project
         test_utils.teardown_project(cwd, project)

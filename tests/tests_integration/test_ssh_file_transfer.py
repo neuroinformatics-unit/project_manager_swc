@@ -10,7 +10,7 @@ import paramiko
 import pytest
 import ssh_test_utils
 import test_utils
-from file_conflicts_pathtable import get_pathtable
+from base import BaseTest
 
 from datashuttle.utils import ssh
 
@@ -44,48 +44,7 @@ PARAM_DATATYPE = [
 ]
 
 
-class TestFileTransfer:
-    @pytest.fixture(
-        scope="class",
-    )
-    def pathtable_and_project(self, tmpdir_factory):
-        """
-        Create a new test project with a test project folder
-        and file structure (see `get_pathtable()` for definition).
-        """
-        tmp_path = tmpdir_factory.mktemp("test")
-
-        base_path = tmp_path / "test with space"
-        test_project_name = "test_file_conflicts"
-
-        project, cwd = test_utils.setup_project_fixture(
-            base_path, test_project_name
-        )
-
-        pathtable = get_pathtable(project.cfg["local_path"])
-
-        self.create_all_pathtable_files(pathtable)
-
-        yield [pathtable, project]
-
-        test_utils.teardown_project(cwd, project)
-
-    @pytest.fixture(
-        scope="class",
-    )
-    def ssh_setup(self, pathtable_and_project):
-        """
-        After initial project setup (in `pathtable_and_project`)
-        setup a container and the project's SSH connection to the container.
-        Then upload the test project to the `central_path`.
-        """
-        pathtable, project = pathtable_and_project
-        ssh_test_utils.setup_project_and_container_for_ssh(project)
-        ssh_test_utils.setup_ssh_connection(project)
-
-        project.upload_rawdata()
-
-        return [pathtable, project]
+class TestFileTransfer(BaseTest):
 
     # ----------------------------------------------------------------------------------
     # Test File Transfer - All Options
