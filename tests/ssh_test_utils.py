@@ -1,3 +1,7 @@
+"""
+
+"""
+
 import builtins
 import copy
 import os
@@ -93,8 +97,8 @@ def setup_ssh_connection(project, setup_ssh_key_pair=True):
 
 def setup_project_and_container_for_ssh(project):
     """"""
-    assert is_docker_installed(), (
-        "docker not installed, "
+    assert docker_is_running(), (
+        "docker is not running, "
         "this should be checked at the top of test script"
     )
 
@@ -171,16 +175,31 @@ def recursive_search_central(project):
 
 def get_test_ssh():
     """"""
-    docker_installed = is_docker_installed()
+    docker_installed = docker_is_running()
     if not docker_installed:
-        warnings.warn("SSH tests are not run as docker is not installed.")
+        warnings.warn(
+            "SSH tests are not run as docker either not installed or running."
+        )
     return docker_installed
+
+
+def docker_is_running():
+    """"""
+    if not is_docker_installed():
+        return False
+
+    is_running = check_sys_command_returns_0("docker stats --no-stream")
+    return is_running
 
 
 def is_docker_installed():
     """"""
-    check_install = (
-        lambda command: subprocess.run(
+    return check_sys_command_returns_0("docker -v")
+
+
+def check_sys_command_returns_0(command):
+    return (
+        subprocess.run(
             command,
             shell=True,
             stdout=subprocess.DEVNULL,
@@ -188,4 +207,3 @@ def is_docker_installed():
         ).returncode
         == 0
     )
-    return check_install("docker -v")
