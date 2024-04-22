@@ -62,7 +62,7 @@ class BaseTest:
         test_utils.delete_project_if_it_exists(project_name)
 
     @pytest.fixture(
-        scope="session",
+        scope="class",
     )
     def setup_ssh_container(self):
         # Annoying session scope does not seem to actually work
