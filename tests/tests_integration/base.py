@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 import warnings
 
@@ -68,5 +69,8 @@ class BaseTest:
         container_name = "running_ssh_tests"
         ssh_test_utils.setup_ssh_container(container_name)
         yield
-        subprocess.run(f"docker stop {container_name}", shell=True)
-        subprocess.run(f"docker rm {container_name}", shell=True)
+
+        sudo = "sudo " if platform.system() == "Linux" else ""
+
+        subprocess.run(f"{sudo}docker stop {container_name}", shell=True)
+        subprocess.run(f"{sudo}rm {container_name}", shell=True)
