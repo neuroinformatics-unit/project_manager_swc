@@ -1,7 +1,9 @@
 import os
+import subprocess
 import warnings
 
 import pytest
+import ssh_test_utils
 import test_utils
 
 from datashuttle.datashuttle import DataShuttle
@@ -57,3 +59,14 @@ class BaseTest:
         test_utils.delete_project_if_it_exists(project_name)
         yield project_name
         test_utils.delete_project_if_it_exists(project_name)
+
+    @pytest.fixture(
+        scope="session",
+    )
+    def setup_ssh_container(self):
+        # Annoying session scope does not seem to actually work
+        container_name = "running_ssh_tests"
+        ssh_test_utils.setup_ssh_container(container_name)
+        yield
+        subprocess.run(f"docker stop {container_name}", shell=True)
+        subprocess.run(f"docker rm {container_name}", shell=True)
