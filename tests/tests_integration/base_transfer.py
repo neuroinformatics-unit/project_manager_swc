@@ -12,10 +12,10 @@ from file_conflicts_pathtable import get_pathtable
 
 
 class BaseTransfer(BaseTest):
-
-    # ----------------------------------------------------------------------------------
-    # Test File Transfer - All Options
-    # ----------------------------------------------------------------------------------
+    """
+    Class holding fixtures and methods for testing the
+    custom transfers with keys (e.g. all_non_sub).
+    """
 
     @pytest.fixture(
         scope="class",

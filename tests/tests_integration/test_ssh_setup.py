@@ -1,5 +1,5 @@
-import platform
-import subprocess
+import builtins
+import copy
 
 import pytest
 import ssh_test_utils
@@ -14,19 +14,6 @@ TEST_SSH = ssh_test_utils.get_test_ssh()
 @pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
 class TestSSHSetup(BaseTest):
 
-    @pytest.fixture(
-        scope="class",
-    )
-    def setup_ssh_container(self):
-        # Annoying session scope does not seem to actually work
-        container_name = "running_ssh_tests"
-        ssh_test_utils.setup_ssh_container(container_name)
-        yield
-
-        sudo = "sudo " if platform.system() == "Linux" else ""
-
-        subprocess.run(f"{sudo}docker rm -f {container_name}", shell=True)
-
     @pytest.fixture(scope="function")
     def project(test, tmp_path, setup_ssh_container):
         """
@@ -39,12 +26,7 @@ class TestSSHSetup(BaseTest):
         project, cwd = test_utils.setup_project_fixture(
             tmp_path, test_project_name
         )
-        ssh_test_utils.setup_project_for_ssh(
-            project,
-            central_path=f"/home/sshuser/datashuttle/{project.project_name}",
-            central_host_id="localhost",
-            central_host_username="sshuser",
-        )
+        ssh_test_utils.setup_project_for_ssh(project)
         yield project
         test_utils.teardown_project(cwd, project)
 
@@ -64,11 +46,12 @@ class TestSSHSetup(BaseTest):
         This should only accept for "y" so try some random strings
         including "n" and check they all do not make the connection.
         """
-        orig_builtin = ssh_test_utils.setup_mock_input(input_)
+        orig_builtin = copy.deepcopy(builtins.input)
+        builtins.input = lambda _: "y"  # type: ignore
 
         project.setup_ssh_connection()
 
-        ssh_test_utils.restore_mock_input(orig_builtin)
+        builtins.input = orig_builtin
 
         captured = capsys.readouterr()
 

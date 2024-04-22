@@ -1,13 +1,10 @@
-import platform
 import shutil
-import subprocess
 
 import paramiko
 import pytest
 import ssh_test_utils
 from base_transfer import BaseTransfer
 
-# from pytest import ssh_config
 from datashuttle.utils import ssh
 
 TEST_SSH = ssh_test_utils.get_test_ssh()
@@ -15,20 +12,6 @@ TEST_SSH = ssh_test_utils.get_test_ssh()
 
 @pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
 class TestSSHTransfer(BaseTransfer):
-
-    @pytest.fixture(
-        scope="class",
-    )
-    def setup_ssh_container(self):
-        # Annoying session scope does not seem to actually work
-        container_name = "running_ssh_tests"
-        ssh_test_utils.setup_ssh_container(container_name)
-        yield
-
-        sudo = "sudo " if platform.system() == "Linux" else ""
-
-        subprocess.run(f"{sudo}docker stop {container_name}", shell=True)
-        subprocess.run(f"{sudo}rm {container_name}", shell=True)
 
     @pytest.fixture(
         scope="class",
@@ -43,11 +26,7 @@ class TestSSHTransfer(BaseTransfer):
 
         ssh_test_utils.setup_project_for_ssh(
             project,
-            central_path=f"/home/sshuser/datashuttle/{project.project_name}",
-            central_host_id="localhost",
-            central_host_username="sshuser",
         )
-
         ssh_test_utils.setup_ssh_connection(project)
 
         project.upload_rawdata()
@@ -163,4 +142,4 @@ class TestSSHTransfer(BaseTransfer):
         Need to do this to compensate for switching
         local_path location in the test environment.
         """
-        project.get_logging_path().mkdir(parents=True, exist_ok=True)  # TOD
+        project.get_logging_path().mkdir(parents=True, exist_ok=True)

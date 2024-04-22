@@ -16,22 +16,26 @@ import paramiko
 
 from datashuttle.utils import rclone, ssh
 
-PORT = 3306  # https://github.com/orgs/community/discussions/25550
+# Choose port 3306 for running on GH actions
+# suggested in https://github.com/orgs/community/discussions/25550
+PORT = 3306
 os.environ["DS_SSH_PORT"] = str(PORT)
 
 
 def setup_project_for_ssh(
-    project, central_path, central_host_id, central_host_username
+    project,
 ):
     """
-    Set up the project configs to use SSH connection
-    to central
+    Set up the project configs to use
+    SSH connection to central. The settings
+    set up a connection to the Dockerfile image
+    found in /ssh_test_images.
     """
     project.update_config_file(
         connection_method="ssh",
-        central_path=central_path,
-        central_host_id=central_host_id,
-        central_host_username=central_host_username,
+        central_path=f"/home/sshuser/datashuttle/{project.project_name}",
+        central_host_id="localhost",
+        central_host_username="sshuser",
     )
     rclone.setup_rclone_config_for_ssh(
         project.cfg,
@@ -40,28 +44,10 @@ def setup_project_for_ssh(
     )
 
 
-def setup_mock_input(input_):
-    """
-    This is very similar to pytest monkeypatch but
-    using that was giving me very strange output,
-    monkeypatch.setattr('builtins.input', lambda _: "n")
-    i.e. pdb went deep into some unrelated code stack
-    """
-    orig_builtin = copy.deepcopy(builtins.input)
-    builtins.input = lambda _: input_  # type: ignore
-    return orig_builtin
-
-
-def restore_mock_input(orig_builtin):
-    """
-    orig_builtin: the copied, original builtins.input
-    """
-    builtins.input = orig_builtin
-
-
 def setup_ssh_connection(project, setup_ssh_key_pair=True):
     """
-    Convenience function to verify the server hostkey.
+    Convenience function to verify the server hostkey and ssh
+    key pairs to the Dockerfile image for ssh tests.
 
     This requires monkeypatching a number of functions involved
     in the SSH setup process. `input()` is patched to always
@@ -72,7 +58,9 @@ def setup_ssh_connection(project, setup_ssh_key_pair=True):
     container thing.
     """
     # Monkeypatch
-    orig_builtin = setup_mock_input(input_="y")
+    orig_builtin = copy.deepcopy(builtins.input)
+    builtins.input = lambda _: "y"  # type: ignore
+
     orig_getpass = copy.deepcopy(ssh.getpass.getpass)
     ssh.getpass.getpass = lambda _: "password"  # type: ignore
 
@@ -88,7 +76,7 @@ def setup_ssh_connection(project, setup_ssh_key_pair=True):
         ssh.setup_ssh_key(project.cfg, log=False)
 
     # Restore functions
-    restore_mock_input(orig_builtin)
+    builtins.input = orig_builtin
     ssh.getpass.getpass = orig_getpass
     sys.stdin.isatty = orig_isatty
 
@@ -96,7 +84,10 @@ def setup_ssh_connection(project, setup_ssh_key_pair=True):
 
 
 def setup_ssh_container(container_name):
-    """"""
+    """
+    Build and run the docker container used for
+    ssh tests.
+    """
     assert docker_is_running(), (
         "docker is not running, "
         "this should be checked at the top of test script"
@@ -107,7 +98,10 @@ def setup_ssh_container(container_name):
 
     if platform.system() == "Linux":
         build_command = "sudo docker build -t ssh_server ."
-        run_command = f"sudo docker run -d -p {PORT}:22 --name {container_name} ssh_server"
+        run_command = (
+            f"sudo docker run -d -p {PORT}:22 "
+            f"--name {container_name} ssh_server"
+        )
     else:
         build_command = "docker build ."
         run_command = (
@@ -119,9 +113,10 @@ def setup_ssh_container(container_name):
         shell=True,
         capture_output=True,
     )
-    assert (
-        build_output.returncode == 0
-    ), f"docker build failed with: STDOUT-{build_output.stdout} STDERR-{build_output.stderr}"
+    assert build_output.returncode == 0, (
+        f"docker build failed with: STDOUT-{build_output.stdout} "
+        f"STDERR-{build_output.stderr}"
+    )
 
     run_output = subprocess.run(
         run_command,
@@ -129,12 +124,39 @@ def setup_ssh_container(container_name):
         capture_output=True,
     )
 
-    assert (
-        run_output.returncode == 0
-    ), f"docker run failed with: STDOUT-{run_output.stdout} STDERR-{run_output.stderr}"
+    assert run_output.returncode == 0, (
+        f"docker run failed with: STDOUT-{run_output.stdout} "
+        f"STDERR-{run_output.stderr}"
+    )
+
+
+def recursive_search_central(project):
+    """
+    A convenience function to recursively search a
+    project for files through SSH, used  during testing
+    across an SSH connection to collected names of
+    files that were transferred.
+    """
+    with paramiko.SSHClient() as client:
+        ssh.connect_client_core(client, project.cfg)
+
+        sftp = client.open_sftp()
+
+        all_filenames = []
+
+        sftp_recursive_file_search(
+            sftp,
+            (project.cfg["central_path"] / "rawdata").as_posix(),
+            all_filenames,
+        )
+    return all_filenames
 
 
 def sftp_recursive_file_search(sftp, path_, all_filenames):
+    """
+    Append all filenames found within a folder,
+    when searching over a sftp connection.
+    """
     try:
         sftp.stat(path_)
     except FileNotFoundError:
@@ -151,25 +173,11 @@ def sftp_recursive_file_search(sftp, path_, all_filenames):
             all_filenames.append(path_ + "/" + file_or_folder.filename)
 
 
-def recursive_search_central(project):
-    """ """
-    with paramiko.SSHClient() as client:
-        ssh.connect_client_core(client, project.cfg)
-
-        sftp = client.open_sftp()
-
-        all_filenames = []
-
-        sftp_recursive_file_search(
-            sftp,
-            (project.cfg["central_path"] / "rawdata").as_posix(),
-            all_filenames,
-        )
-    return all_filenames
-
-
 def get_test_ssh():
-    """"""
+    """
+    Return bool indicating whether Docker is installed and running,
+    which is required for ssh tests.
+    """
     docker_installed = docker_is_running()
     if not docker_installed:
         warnings.warn(
@@ -179,7 +187,6 @@ def get_test_ssh():
 
 
 def docker_is_running():
-    """"""
     if not is_docker_installed():
         return False
 
@@ -188,7 +195,6 @@ def docker_is_running():
 
 
 def is_docker_installed():
-    """"""
     return check_sys_command_returns_0("docker -v")
 
 
