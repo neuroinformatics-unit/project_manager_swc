@@ -65,8 +65,11 @@ class BaseTest:
         scope="class",
     )
     def setup_ssh_container(self):
-        # Annoying session scope does not seem to actually work
-        container_name = "running_ssh_tests"
+        """
+        Set up the Dockerfile container for SSH tests and
+        delete it on teardown.
+        """
+        container_name = "datashuttle_ssh_tests"
         ssh_test_utils.setup_ssh_container(container_name)
         yield
 
