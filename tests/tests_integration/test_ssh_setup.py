@@ -25,8 +25,7 @@ class TestSSHSetup(BaseTest):
 
         sudo = "sudo " if platform.system() == "Linux" else ""
 
-        subprocess.run(f"{sudo}docker stop {container_name}", shell=True)
-        subprocess.run(f"{sudo}rm {container_name}", shell=True)
+        subprocess.run(f"{sudo}docker rm -f {container_name}", shell=True)
 
     @pytest.fixture(scope="function")
     def project(test, tmp_path, setup_ssh_container):
