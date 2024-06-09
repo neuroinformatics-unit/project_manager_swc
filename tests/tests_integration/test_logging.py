@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import re
 from pathlib import Path
@@ -8,6 +9,7 @@ import test_utils
 
 from datashuttle import DataShuttle
 from datashuttle.configs.canonical_tags import tags
+from datashuttle.utils import ds_logger
 from datashuttle.utils.custom_exceptions import (
     ConfigError,
     NeuroBlueprintError,
@@ -15,6 +17,77 @@ from datashuttle.utils.custom_exceptions import (
 
 
 class TestLogging:
+
+    @pytest.fixture(scope="function")
+    def teardown_logger(self):
+        """
+        Ensure the logger is deleted at the end of each test.
+        """
+        yield
+        if "datashuttle" in logging.root.manager.loggerDict:
+            logging.root.manager.loggerDict.pop("datashuttle")
+
+    # -------------------------------------------------------------------------
+    # Basic Functionality Tests
+    # -------------------------------------------------------------------------
+
+    def test_logger_name(self):
+        """
+        Check the canonical logger name.
+        """
+        assert ds_logger.get_logger_name() == "datashuttle"
+
+    def test_start_logging(self, tmp_path, teardown_logger):
+        """
+        Test that the central `start` logging function
+        starts the named logger with the expected handlers.
+        """
+        assert ds_logger.logging_is_active() is False
+
+        ds_logger.start(tmp_path, "test-command", variables=[])
+
+        # test logger exists and is as expected
+        assert "datashuttle" in logging.root.manager.loggerDict
+        assert ds_logger.logging_is_active() is True
+
+        logger = logging.getLogger("datashuttle")
+        assert logger.propagate is False
+        assert len(logger.handlers) == 1
+        assert isinstance(logger.handlers[0], logging.FileHandler)
+
+    def test_shutdown_logger(self, tmp_path, teardown_logger):
+        """
+        Check the log handler remover indeed removes the handles.
+        """
+        assert ds_logger.logging_is_active() is False
+
+        ds_logger.start(tmp_path, "test-command", variables=[])
+
+        logger = logging.getLogger("datashuttle")
+
+        ds_logger.close_log_filehandler()
+
+        assert len(logger.handlers) == 0
+        assert ds_logger.logging_is_active() is False
+
+    def test_logging_an_error(self, project, teardown_logger):
+        """
+        Check that errors are caught and logged properly.
+        """
+        try:
+            project.create_folders("rawdata", "sob-001")
+        except:
+            pass
+
+        log = test_utils.read_log_file(project.cfg.logging_path)
+
+        assert "ERROR" in log
+        assert "Problem with name:" in log
+
+    # -------------------------------------------------------------------------
+    # Functional Tests
+    # -------------------------------------------------------------------------
+
     @pytest.fixture(scope="function")
     def clean_project_name(self):
         """
