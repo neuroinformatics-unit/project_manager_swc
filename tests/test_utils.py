@@ -581,7 +581,7 @@ def set_datashuttle_loggers(disable):
     of test_logging.py and turned back off during
     tear-down.
     """
-    for name in [ds_logger.get_logger_name(), "rich"]:
+    for name in ["datashuttle", "rich"]:
         logger = logging.getLogger(name)
         logger.disabled = disable
 

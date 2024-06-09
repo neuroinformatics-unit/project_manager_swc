@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import traceback
 import warnings
@@ -23,9 +24,8 @@ def log(message: str) -> None:
     Log the message to the main initialised
     logger.
     """
-    if ds_logger.logging_is_active():
-        logger = ds_logger.get_logger()
-        logger.debug(message)
+    logger = logging.getLogger("datashuttle")
+    logger.debug(message)
 
 
 def log_and_message(message: str, use_rich: bool = False) -> None:
@@ -41,19 +41,11 @@ def log_and_raise_error(message: str, exception: Any) -> None:
     """
     Log the message before raising the same message as an error.
     """
-    if ds_logger.logging_is_active():
-        logger = ds_logger.get_logger()
+    if "datashuttle" in logging.root.manager.loggerDict.keys():
+        logger = logging.getLogger("datashuttle")
         logger.error(f"\n\n{' '.join(traceback.format_stack(limit=5))}")
         logger.error(message)
     raise_error(message, exception)
-
-
-def warn(message: str, log: bool) -> None:
-    """ """
-    if log and ds_logger.logging_is_active():
-        logger = ds_logger.get_logger()
-        logger.warning(message)
-    warnings.warn(message)
 
 
 def raise_error(message: str, exception) -> None:
@@ -64,6 +56,14 @@ def raise_error(message: str, exception) -> None:
     """
     ds_logger.close_log_filehandler()
     raise exception(message)
+
+
+def warn(message: str, log: bool) -> None:
+    """ """
+    if log:
+        logger = logging.getLogger("datashuttle")
+        logger.warning(message)
+    warnings.warn(message)
 
 
 def print_message_to_user(
