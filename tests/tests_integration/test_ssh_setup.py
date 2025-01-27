@@ -1,24 +1,24 @@
-"""
-SSH configs are set in conftest.py . The password
-should be stored in a file called test_ssh_password.txt located
-in the same folder as test_ssh.py
-"""
+import builtins
+import copy
 
 import pytest
 import ssh_test_utils
 import test_utils
-from pytest import ssh_config
+from base import BaseTest
 
 from datashuttle.utils import ssh
 
+TEST_SSH = ssh_test_utils.get_test_ssh()
 
-@pytest.mark.skipif(ssh_config.TEST_SSH is False, reason="TEST_SSH is false")
-class TestSSH:
+
+@pytest.mark.skipif("not TEST_SSH", reason="TEST_SSH is false")
+class TestSSHSetup(BaseTest):
+
     @pytest.fixture(scope="function")
-    def project(test, tmp_path):
+    def project(test, tmp_path, setup_ssh_container):
         """
-        Make a project as per usual, but now add
-        in test ssh configurations
+        Set up a project with configs for SSH into
+        the test Dockerfile image.
         """
         tmp_path = tmp_path / "test with space"
 
@@ -26,14 +26,7 @@ class TestSSH:
         project, cwd = test_utils.setup_project_fixture(
             tmp_path, test_project_name
         )
-
-        ssh_test_utils.setup_project_for_ssh(
-            project,
-            ssh_config.FILESYSTEM_PATH,
-            ssh_config.CENTRAL_HOST_ID,
-            ssh_config.USERNAME,
-        )
-
+        ssh_test_utils.setup_project_for_ssh(project)
         yield project
         test_utils.teardown_project(cwd, project)
 
@@ -46,18 +39,14 @@ class TestSSH:
         self, capsys, project, input_
     ):
         """
-        Use the main function to test this. Test the sub-function
-        when accepting, because this main function will also
-        call setup ssh key pairs which we don't want to do yet
-
-        This should only accept for "y" so try some random strings
-        including "n" and check they all do not make the connection.
+        Test that host not accepted if input is not "y".
         """
-        orig_builtin = ssh_test_utils.setup_mock_input(input_)
+        orig_builtin = copy.deepcopy(builtins.input)
+        builtins.input = lambda _: input_  # type: ignore
 
         project.setup_ssh_connection()
 
-        ssh_test_utils.restore_mock_input(orig_builtin)
+        builtins.input = orig_builtin
 
         captured = capsys.readouterr()
 
@@ -69,27 +58,27 @@ class TestSSH:
         and check hostkey is successfully accepted and written to configs.
         """
         test_utils.clear_capsys(capsys)
-        orig_builtin = ssh_test_utils.setup_mock_input(input_="y")
 
-        verified = ssh.verify_ssh_central_host(
-            project.cfg["central_host_id"], project.cfg.hostkeys_path, log=True
+        verified = ssh_test_utils.setup_ssh_connection(
+            project, setup_ssh_key_pair=False
         )
-
-        ssh_test_utils.restore_mock_input(orig_builtin)
 
         assert verified
         captured = capsys.readouterr()
+
         assert captured.out == "Host accepted.\n"
 
         with open(project.cfg.hostkeys_path, "r") as file:
             hostkey = file.readlines()[0]
 
-        assert f"{project.cfg['central_host_id']} ssh-ed25519 " in hostkey
+        assert (
+            f"[{project.cfg['central_host_id']}]:3306 ssh-ed25519 " in hostkey
+        )
 
     def test_generate_and_write_ssh_key(self, project):
         """
-        Check ssh key for passwordless connection is written
-        to file
+        Check ssh key for passwordless connection
+        is written to file.
         """
         path_to_save = project.cfg["local_path"] / "test"
         ssh.generate_and_write_ssh_key(path_to_save)

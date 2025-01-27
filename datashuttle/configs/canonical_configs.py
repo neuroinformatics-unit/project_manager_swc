@@ -11,6 +11,7 @@ get_canonical_configs()
 
 from __future__ import annotations
 
+import os
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -52,6 +53,16 @@ def get_datatypes() -> List[str]:
     NeuroBlueprint.
     """
     return ["ephys", "behav", "funcimg", "anat"]
+
+
+def get_default_ssh_port() -> int:
+    """
+    Get the default port used for SSH connections.
+    """
+    if "DS_SSH_PORT" in os.environ:
+        return int(os.environ["DS_SSH_PORT"])
+    else:
+        return 22
 
 
 # -----------------------------------------------------------------------------

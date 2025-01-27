@@ -56,7 +56,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev]
       - name: Test
-        run: pytest
+        # run SSH tests only on Linux because Windows and macOS
+        # are already run within a virtual container and so cannot
+        # run Linux containers because nested containerisation is disabled.
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+             sudo service mysql stop  # free up port  3306 for ssh tests: https://github.com/orgs/community/discussions/25550
+             pytest
+          else
+             pytest -k "not test_combinations_ssh_transfer and not test_ssh_setup"
+          fi
 
   build_sdist_wheels:
     name: Build source distribution

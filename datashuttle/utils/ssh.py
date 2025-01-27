@@ -14,6 +14,7 @@ from typing import Any, List, Optional, Tuple
 
 import paramiko
 
+from datashuttle.configs import canonical_configs
 from datashuttle.utils import utils
 
 # -----------------------------------------------------------------------------
@@ -42,6 +43,7 @@ def connect_client_core(
             else None
         ),
         look_for_keys=True,
+        port=canonical_configs.get_default_ssh_port(),
     )
 
 
@@ -83,7 +85,9 @@ def get_remote_server_key(central_host_id: str):
     connection.
     """
     transport: paramiko.Transport
-    with paramiko.Transport(central_host_id) as transport:
+    with paramiko.Transport(
+        (central_host_id, canonical_configs.get_default_ssh_port())
+    ) as transport:
         transport.connect()
         key = transport.get_remote_server_key()
     return key
@@ -91,7 +95,11 @@ def get_remote_server_key(central_host_id: str):
 
 def save_hostkey_locally(key, central_host_id, hostkeys_path) -> None:
     client = paramiko.SSHClient()
-    client.get_host_keys().add(central_host_id, key.get_name(), key)
+    client.get_host_keys().add(
+        f"[{central_host_id}]:{canonical_configs.get_default_ssh_port()}",
+        key.get_name(),
+        key,
+    )
     client.get_host_keys().save(hostkeys_path.as_posix())
 
 
@@ -179,7 +187,7 @@ def connect_client_with_logging(
                 f"Connection to { cfg['central_host_id']} made successfully."
             )
 
-    except Exception:
+    except Exception as e:
         utils.log_and_raise_error(
             f"Could not connect to server. Ensure that \n"
             f"1) You have run setup_ssh_connection() \n"
@@ -187,7 +195,8 @@ def connect_client_with_logging(
             f"3) The central_host_id: {cfg['central_host_id']} is"
             f" correct.\n"
             f"4) The central username:"
-            f" {cfg['central_host_username']}, and password are correct.",
+            f" {cfg['central_host_username']}, and password are correct."
+            f"Original error: {e}",
             ConnectionError,
         )
 
