@@ -46,14 +46,6 @@ def get_canonical_configs() -> dict:
     return canonical_configs
 
 
-def get_datatypes() -> List[str]:
-    """
-    Canonical list of datatype flags based on
-    NeuroBlueprint.
-    """
-    return ["ephys", "behav", "funcimg", "anat"]
-
-
 # -----------------------------------------------------------------------------
 # Check Configs
 # -----------------------------------------------------------------------------
@@ -263,3 +255,48 @@ def get_persistent_settings_defaults() -> Dict:
     settings.update(get_name_templates_defaults())
 
     return settings
+
+
+def get_datatypes() -> List[str]:
+    """
+    Canonical list of datatype flags based on NeuroBlueprint.
+
+    This must be kept up to date with the datatypes in the NeuroBLueprint specification.
+    """
+    return get_broad_datatypes() + get_narrow_datatypes()
+
+
+def get_broad_datatypes():
+    return ["ephys", "behav", "funcimg", "anat"]
+
+
+def get_narrow_datatypes():
+    return [
+        # for "ephys",
+        "ecephys",
+        "icephys",
+        # for "funcimg",
+        "cscope",
+        "f2pe",
+        "fmri",
+        "fusi",
+        # for "anat",
+        "2pe",
+        "bf",
+        "cars",
+        "conf",
+        "dic",
+        "df",
+        "fluo",
+        "mpe",
+        "nlo",
+        "oct",
+        "pc",
+        "pli",
+        "sem",
+        "spim",
+        "sr",
+        "tem",
+        "uct",
+        "mri",
+    ]
