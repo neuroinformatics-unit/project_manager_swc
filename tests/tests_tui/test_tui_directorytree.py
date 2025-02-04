@@ -117,7 +117,7 @@ class TestTuiCreateDirectoryTree(TuiBase):
         self, setup_project_paths
     ):
         """
-        Check that pressing CTRL+Q on the directorytree copies the
+        Check that pressing CTRL+W on the directorytree copies the
         hovered folder to the clipboard (using pyperclip).
         """
         tmp_config_path, tmp_path, project_name = setup_project_paths.values()

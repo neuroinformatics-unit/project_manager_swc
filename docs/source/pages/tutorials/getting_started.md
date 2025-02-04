@@ -149,7 +149,7 @@ if connecting via SSH.
 
 In this tutorial, we will set this next to the local path for convenience.
 
-1) Copy the contents of the _local path_ input by clicking it, hovering over it and pressing `CTRL+Q` to copy.
+1) Copy the contents of the _local path_ input by clicking it, hovering over it and pressing `CTRL+W` to copy.
 2) Paste it into the _central path_ input with `CTRL+V` and change "local" to "central".
 
 ```{image} /_static/screenshots/tutorial-1-make-central-path-dark.png
@@ -403,7 +403,7 @@ will update to display the new folders:
 <br>
 
 By hovering over a folder with the mouse we can quickly
-copy the full path to the folder by pressing `CTRL+Q)`
+copy the full path to the folder by pressing `CTRL+W)`
 (you may need to click the `Directory Tree` first).
 
 Alternatively, pressing `CTRL+O` will open the folder in your file browser.

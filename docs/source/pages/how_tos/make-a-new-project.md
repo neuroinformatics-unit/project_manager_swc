@@ -100,7 +100,7 @@ You can then navigate to the `Project Manager` screen by clicking the
 
 ```{note}
 The contents of the input boxes can be copied with
-with `CTRL+Q`, or opened in the system filebrowser with `CTRL+O`.
+with `CTRL+W`, or opened in the system filebrowser with `CTRL+O`.
 ```
 
 :::
