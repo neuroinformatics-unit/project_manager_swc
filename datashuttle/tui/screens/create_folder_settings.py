@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Literal, Optional
 
 if TYPE_CHECKING:
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 import webbrowser
 
-from textual.containers import Container, Horizontal
+from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -20,11 +20,77 @@ from textual.widgets import (
     Label,
     RadioButton,
     RadioSet,
+    SelectionList,
 )
+from textual.widgets.selection_list import Selection
 
 from datashuttle.configs import links
 from datashuttle.tui.custom_widgets import TopLevelFolderSelect
 from datashuttle.tui.tooltips import get_tooltip
+
+
+class DisplayedDatatypesScreen(ModalScreen):
+    """ """
+
+    def __init__(
+        self,
+        create_or_transfer: Literal["create", "transfer"],
+        interface: Interface,
+    ) -> None:
+        super(DisplayedDatatypesScreen, self).__init__()
+
+        self.interface = interface
+        self.create_or_transfer = create_or_transfer
+
+        # TODO: this is copy and paste. TODO: move this to save thing as checkboxes.
+        if self.create_or_transfer == "create":
+            self.settings_key = "create_checkboxes_on"
+        else:
+            self.settings_key = "transfer_checkboxes_on"
+
+        self.datatype_config = self.interface.get_tui_settings()[
+            self.settings_key
+        ]
+
+    def compose(self) -> ComposeResult:
+
+        selections = [
+            Selection(datatype, idx, setting["displayed"])
+            for idx, (datatype, setting) in enumerate(
+                self.datatype_config.items()
+            )
+        ]
+        yield Vertical(
+            Label(
+                "Top level folder:",
+                id="create_folders_display_datatypes_toplevel_label",
+            ),
+            SelectionList[int](*selections),
+        )
+        yield Container()
+        yield Button("Save", id="create_folders_display_datatypes_save_button")
+
+    def on_button_pressed(self, event):
+        """
+        For some reason had issues unless did all together, could not save
+        dynamically. shoudl be clear with the 'Save' button.
+        """
+        if event.button.id == "create_folders_display_datatypes_save_button":
+            self.interface.update_tui_settings(
+                self.datatype_config, self.settings_key
+            )
+            self.dismiss(True)
+
+    def on_selection_list_selection_toggled(
+        self, event
+    ):  # SLectionMessage I think
+        """ """
+        datatype_name = event.selection.prompt.plain
+        is_checked = not event.selection.initial_state
+        self.datatype_config[datatype_name]["displayed"] = is_checked
+
+        if not is_checked:
+            self.datatype_config[datatype_name]["on"] = False
 
 
 class CreateFoldersSettingsScreen(ModalScreen):

@@ -201,6 +201,7 @@ def check_config_types(config_dict: Configs) -> None:
 # -----------------------------------------------------------------------------
 
 
+# TODO: don't forget backward compatability!
 def get_tui_config_defaults() -> Dict:
     """
     Get the default settings for the datatype checkboxes
@@ -209,19 +210,19 @@ def get_tui_config_defaults() -> Dict:
     settings = {
         "tui": {
             "create_checkboxes_on": {
-                "behav": True,
-                "ephys": True,
-                "funcimg": True,
-                "anat": True,
+                #                "behav": True,
+                #                "ephys": True,
+                #                "funcimg": True,
+                #                "anat": True,
             },
             "transfer_checkboxes_on": {
-                "behav": False,
-                "ephys": False,
-                "funcimg": False,
-                "anat": False,
-                "all": True,
-                "all_datatype": False,
-                "all_non_datatype": False,
+                #                "behav": False,
+                #                "ephys": False,
+                #                "funcimg": False,
+                #                "anat": False,
+                "all": {"on": True, "displayed": True},
+                "all_datatype": {"on": False, "displayed": True},
+                "all_non_datatype": {"on": False, "displayed": True},
             },
             "top_level_folder_select": {
                 "create_tab": "rawdata",
@@ -233,6 +234,33 @@ def get_tui_config_defaults() -> Dict:
             "dry_run": False,
         }
     }
+
+    narrow_datatypes = get_narrow_datatypes()
+
+    # TODO: this organisation is pretty horrible!
+    for broad_key in get_broad_datatypes():
+        settings["tui"]["create_checkboxes_on"][broad_key] = {
+            "on": True,
+            "displayed": True,
+        }
+        settings["tui"]["transfer_checkboxes_on"][broad_key] = {
+            "on": False,
+            "displayed": True,
+        }
+
+    # Need to split it so broad datatypes are at the top of all lists
+    for broad_key in get_broad_datatypes():
+        if broad_key in narrow_datatypes:
+            for narrow_key in narrow_datatypes[broad_key]:
+                settings["tui"]["create_checkboxes_on"][narrow_key] = {
+                    "on": False,
+                    "displayed": False,
+                }
+                settings["tui"]["transfer_checkboxes_on"][narrow_key] = {
+                    "on": False,
+                    "displayed": False,
+                }
+
     return settings
 
 
@@ -263,7 +291,18 @@ def get_datatypes() -> List[str]:
 
     This must be kept up to date with the datatypes in the NeuroBLueprint specification.
     """
-    return get_broad_datatypes() + get_narrow_datatypes()
+    all_datatypes = []
+
+    broad_datatypes = get_broad_datatypes()
+    narrow_datatypes = get_narrow_datatypes()
+
+    for datatype in broad_datatypes:
+        if datatype in narrow_datatypes:
+            all_datatypes += narrow_datatypes[datatype]
+
+    all_datatypes += broad_datatypes
+
+    return all_datatypes
 
 
 def get_broad_datatypes():
@@ -271,32 +310,27 @@ def get_broad_datatypes():
 
 
 def get_narrow_datatypes():
-    return [
-        # for "ephys",
-        "ecephys",
-        "icephys",
-        # for "funcimg",
-        "cscope",
-        "f2pe",
-        "fmri",
-        "fusi",
-        # for "anat",
-        "2pe",
-        "bf",
-        "cars",
-        "conf",
-        "dic",
-        "df",
-        "fluo",
-        "mpe",
-        "nlo",
-        "oct",
-        "pc",
-        "pli",
-        "sem",
-        "spim",
-        "sr",
-        "tem",
-        "uct",
-        "mri",
-    ]
+    return {
+        "ephys": ["ecephys", "icephys"],
+        "funcimg": ["cscope", "f2pe", "fmri", "fusi"],
+        "anat": [
+            "2pe",
+            "bf",
+            "cars",
+            "conf",
+            "dic",
+            "df",
+            "fluo",
+            "mpe",
+            "nlo",
+            "oct",
+            "pc",
+            "pli",
+            "sem",
+            "spim",
+            "sr",
+            "tem",
+            "uct",
+            "mri",
+        ],
+    }

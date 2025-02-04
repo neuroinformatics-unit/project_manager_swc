@@ -30,10 +30,6 @@ TabScreen > TabbedContent {
     border: tall $error;
 }
 
-#create_folders_settings_button {
-    dock: right;
-}
-
 #create_folders_buttons_horizontal {
     height: 3;
 }

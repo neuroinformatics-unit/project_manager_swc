@@ -89,12 +89,13 @@ class DatatypeCheckboxes(Static):
         ]
 
     def compose(self) -> ComposeResult:
-        for datatype in self.datatype_config.keys():
-            yield Checkbox(
-                datatype.replace("_", " "),
-                id=self.get_checkbox_name(datatype),
-                value=self.datatype_config[datatype],
-            )
+        for datatype_name, datatype_setting in self.datatype_config.items():
+            if datatype_setting["displayed"]:
+                yield Checkbox(
+                    datatype_name.replace("_", " "),
+                    id=self.get_checkbox_name(datatype_name),
+                    value=datatype_setting["on"],
+                )
 
     @on(Checkbox.Changed)
     def on_checkbox_changed(self) -> None:
@@ -102,11 +103,17 @@ class DatatypeCheckboxes(Static):
         When a checkbox is changed, update the `self.datatype_config`
         to contain new boolean values for each datatype. Also update
         the stored `persistent_settings`.
+
+        TODO: document this better. It is quite counter-iuntutiive becauyse
+        we update everything for a single change. BUT it is better to compartmentalise
+        and doesn't incurr any additional overhead. BUT check this is acutally true
+        there is probably as better way
         """
         for datatype in self.datatype_config.keys():
-            self.datatype_config[datatype] = self.query_one(
-                f"#{self.get_checkbox_name(datatype)}"
-            ).value
+            if self.datatype_config[datatype]["displayed"]:
+                self.datatype_config[datatype]["on"] = self.query_one(
+                    f"#{self.get_checkbox_name(datatype)}"
+                ).value
 
         self.interface.update_tui_settings(
             self.datatype_config, self.settings_key
@@ -119,8 +126,8 @@ class DatatypeCheckboxes(Static):
         """
         selected_datatypes = [
             datatype
-            for datatype, is_on in self.datatype_config.items()
-            if is_on
+            for datatype, settings in self.datatype_config.items()
+            if settings["on"]
         ]
         return selected_datatypes
 

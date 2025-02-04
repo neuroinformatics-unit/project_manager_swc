@@ -25,6 +25,7 @@ from datashuttle.tui.custom_widgets import (
 )
 from datashuttle.tui.screens.create_folder_settings import (
     CreateFoldersSettingsScreen,
+    DisplayedDatatypesScreen,
 )
 from datashuttle.tui.tooltips import get_tooltip
 from datashuttle.tui.utils.tui_decorators import require_double_click
@@ -75,6 +76,11 @@ class CreateFoldersTab(TreeAndInputTab):
             Button(
                 "Create Folders", id="create_folders_create_folders_button"
             ),
+            Horizontal(),
+            Button(
+                "Displayed Datatypes",
+                id="create_folders_displayed_datatypes_button",
+            ),
             Button(
                 "Settings",
                 id="create_folders_settings_button",
@@ -110,11 +116,22 @@ class CreateFoldersTab(TreeAndInputTab):
         if event.button.id == "create_folders_create_folders_button":
             self.create_folders()
 
+        elif event.button.id == "create_folders_displayed_datatypes_button":
+
+            self.mainwindow.push_screen(
+                DisplayedDatatypesScreen("create", self.interface),
+                self.refresh_after_datatypes_changed,
+            )
+
         elif event.button.id == "create_folders_settings_button":
             self.mainwindow.push_screen(
                 CreateFoldersSettingsScreen(self.mainwindow, self.interface),
                 lambda unused_bool: self.revalidate_inputs(["sub", "ses"]),
             )
+
+    async def refresh_after_datatypes_changed(self, ignore):
+        await self.recompose()
+        self.on_mount()
 
     @require_double_click
     def on_clickable_input_clicked(
