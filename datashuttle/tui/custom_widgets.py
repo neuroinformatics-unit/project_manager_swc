@@ -104,9 +104,9 @@ class DatatypeCheckboxes(Static):
         to contain new boolean values for each datatype. Also update
         the stored `persistent_settings`.
 
-        TODO: document this better. It is quite counter-iuntutiive becauyse
+        TODO: document this better. It is quite counter-intuitive because
         we update everything for a single change. BUT it is better to compartmentalise
-        and doesn't incurr any additional overhead. BUT check this is acutally true
+        and doesn't incur any additional overhead. BUT check this is actually true
         there is probably as better way
         """
         for datatype in self.datatype_config.keys():

@@ -201,25 +201,21 @@ def check_config_types(config_dict: Configs) -> None:
 # -----------------------------------------------------------------------------
 
 
-# TODO: don't forget backward compatability!
+# TODO: don't forget backward compatibility!
 def get_tui_config_defaults() -> Dict:
     """
     Get the default settings for the datatype checkboxes
-    in the TUI. By default, they are all checked.
+    in the TUI.
+
+    Two sets are maintained (one for creating,
+    one for transfer) which have different defaults.
+    By default, all broad datatype checkboxes are displayed,
+    and narrow are turned off.
     """
     settings = {
         "tui": {
-            "create_checkboxes_on": {
-                #                "behav": True,
-                #                "ephys": True,
-                #                "funcimg": True,
-                #                "anat": True,
-            },
+            "create_checkboxes_on": {},
             "transfer_checkboxes_on": {
-                #                "behav": False,
-                #                "ephys": False,
-                #                "funcimg": False,
-                #                "anat": False,
                 "all": {"on": True, "displayed": True},
                 "all_datatype": {"on": False, "displayed": True},
                 "all_non_datatype": {"on": False, "displayed": True},
@@ -237,26 +233,25 @@ def get_tui_config_defaults() -> Dict:
 
     narrow_datatypes = get_narrow_datatypes()
 
-    # TODO: this organisation is pretty horrible!
+    # Fill all datatype options
     for broad_key in get_broad_datatypes():
-        settings["tui"]["create_checkboxes_on"][broad_key] = {
+
+        settings["tui"]["create_checkboxes_on"][broad_key] = {  # type: ignore
             "on": True,
             "displayed": True,
         }
-        settings["tui"]["transfer_checkboxes_on"][broad_key] = {
+        settings["tui"]["transfer_checkboxes_on"][broad_key] = {  # type: ignore
             "on": False,
             "displayed": True,
         }
 
-    # Need to split it so broad datatypes are at the top of all lists
-    for broad_key in get_broad_datatypes():
         if broad_key in narrow_datatypes:
             for narrow_key in narrow_datatypes[broad_key]:
-                settings["tui"]["create_checkboxes_on"][narrow_key] = {
+                settings["tui"]["create_checkboxes_on"][narrow_key] = {  # type: ignore
                     "on": False,
                     "displayed": False,
                 }
-                settings["tui"]["transfer_checkboxes_on"][narrow_key] = {
+                settings["tui"]["transfer_checkboxes_on"][narrow_key] = {  # type: ignore
                     "on": False,
                     "displayed": False,
                 }
