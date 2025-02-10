@@ -60,26 +60,42 @@ class DisplayedDatatypesScreen(ModalScreen):
                 self.datatype_config.items()
             )
         ]
-        yield Vertical(
-            Label(
-                "Top level folder:",
-                id="create_folders_display_datatypes_toplevel_label",
+        yield Container(
+            Vertical(
+                Label(
+                    "Select datatype checkboxes to display:",
+                    id="display_datatypes_toplevel_label",  # TODO: CHANGE NAME
+                ),
+                SelectionList[int](
+                    *selections, id="displayed_datatypes_selection_list"
+                ),
+                id="display_datatypes_selection_container",
             ),
-            SelectionList[int](*selections),
+            Vertical(),
+            Horizontal(
+                Button(
+                    "Save", id="display_datatypes_save_button"
+                ),  #    TODO: CHANGE NAME
+                Horizontal(),
+                Button("Close", id="displayed_datatypes_close_button"),
+                id="displayed_datatypes_button_container",
+            ),
+            id="display_datatypes_screen_container",
         )
-        yield Container()
-        yield Button("Save", id="create_folders_display_datatypes_save_button")
 
     def on_button_pressed(self, event):
         """
         For some reason had issues unless did all together, could not save
-        dynamically. shoudl be clear with the 'Save' button.
+        dynamically. should be clear with the 'Save' button.
         """
-        if event.button.id == "create_folders_display_datatypes_save_button":
+        if event.button.id == "display_datatypes_save_button":
             self.interface.update_tui_settings(
                 self.datatype_config, self.settings_key
             )
             self.dismiss(True)
+
+        elif event.button.id == "displayed_datatypes_close_button":
+            self.dismiss()
 
     def on_selection_list_selection_toggled(
         self, event
