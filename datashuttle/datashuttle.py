@@ -967,7 +967,7 @@ class DataShuttle:
         self._set_attributes_after_config_load()
 
         # This is just a placeholder rclone config that will suffice
-        # if ever central is a 'local filesystem'.
+        # if central is a 'local filesystem'.
         self._setup_rclone_central_local_filesystem_config()
 
         utils.log_and_message(
@@ -1511,6 +1511,11 @@ class DataShuttle:
                 new_create_checkbox_configs[key]["on"] = settings["tui"][
                     "create_checkboxes_on"
                 ][key]
+                new_transfer_checkbox_configs[key]["on"] = settings["tui"][
+                    "transfer_checkboxes_on"
+                ][key]
+
+            for key in ["all", "all_datatype", "all_non_datatype"]:
                 new_transfer_checkbox_configs[key]["on"] = settings["tui"][
                     "transfer_checkboxes_on"
                 ][key]
