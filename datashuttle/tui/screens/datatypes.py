@@ -201,7 +201,7 @@ class DatatypeCheckboxes(Static):
 
 
 def get_tui_settings_key_name(
-    create_or_transfer: Literal["create", "transfer"]
+    create_or_transfer: Literal["create", "transfer"],
 ) -> str:
     if create_or_transfer == "create":
         settings_key = "create_checkboxes_on"
