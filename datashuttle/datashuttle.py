@@ -1496,36 +1496,13 @@ class DataShuttle:
             if key not in settings["tui"]:
                 settings["tui"][key] = canonical_tui_configs["tui"][key]
 
-        # Need to fill what people already had selected TODO DOC BETTER
+        # Handle conversion to 'narrow datatype' v0.6.0
         if not isinstance(
             settings["tui"]["create_checkboxes_on"]["behav"], dict
         ):
-            new_create_checkbox_configs = copy.deepcopy(
-                canonical_tui_configs["tui"]["create_checkboxes_on"]
+            canonical_configs.in_place_update_settings_for_narrow_datatype(
+                settings
             )
-            new_transfer_checkbox_configs = copy.deepcopy(
-                canonical_tui_configs["tui"]["transfer_checkboxes_on"]
-            )
-
-            for key in ["behav", "ephys", "funcimg", "anat"]:
-                new_create_checkbox_configs[key]["on"] = settings["tui"][
-                    "create_checkboxes_on"
-                ][key]
-                new_transfer_checkbox_configs[key]["on"] = settings["tui"][
-                    "transfer_checkboxes_on"
-                ][key]
-
-            for key in ["all", "all_datatype", "all_non_datatype"]:
-                new_transfer_checkbox_configs[key]["on"] = settings["tui"][
-                    "transfer_checkboxes_on"
-                ][key]
-
-            settings["tui"][
-                "create_checkboxes_on"
-            ] = new_create_checkbox_configs
-            settings["tui"][
-                "transfer_checkboxes_on"
-            ] = new_transfer_checkbox_configs
 
     def _check_top_level_folder(self, top_level_folder):
         """

@@ -24,6 +24,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from datashuttle.configs.config_class import Configs
+import copy
 from pathlib import Path
 
 from datashuttle.utils import folders, utils
@@ -329,3 +330,40 @@ def get_narrow_datatypes():
             "mri",
         ],
     }
+
+
+def in_place_update_settings_for_narrow_datatype(settings: dict):
+    """
+    In versions < v0.6.0, only 'broad' datatypes were implemented
+    and available in the TUI. Since, 'narrow' datatypes are introduced
+    and datatype tui can be set to be both on / off but also
+    displayed / not displayed.
+
+    This function converts the old format to the new format so that
+    all broad datatype settings (on / off) are maintained in
+    then new version.
+    """
+    canonical_tui_configs = get_tui_config_defaults()
+
+    new_create_checkbox_configs = copy.deepcopy(
+        canonical_tui_configs["tui"]["create_checkboxes_on"]
+    )
+    new_transfer_checkbox_configs = copy.deepcopy(
+        canonical_tui_configs["tui"]["transfer_checkboxes_on"]
+    )
+
+    for key in ["behav", "ephys", "funcimg", "anat"]:
+        new_create_checkbox_configs[key]["on"] = settings["tui"][
+            "create_checkboxes_on"
+        ][key]
+        new_transfer_checkbox_configs[key]["on"] = settings["tui"][
+            "transfer_checkboxes_on"
+        ][key]
+
+    for key in ["all", "all_datatype", "all_non_datatype"]:
+        new_transfer_checkbox_configs[key]["on"] = settings["tui"][
+            "transfer_checkboxes_on"
+        ][key]
+
+    settings["tui"]["create_checkboxes_on"] = new_create_checkbox_configs
+    settings["tui"]["transfer_checkboxes_on"] = new_transfer_checkbox_configs
