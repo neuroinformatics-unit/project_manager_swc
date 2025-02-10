@@ -70,9 +70,6 @@ class DisplayedDatatypesScreen(ModalScreen):
             ),
             Vertical(),
             Horizontal(
-                #       Button(
-                #          "Save", id="display_datatypes_save_button"
-                #     ),  #    TODO: CHANGE NAME
                 Horizontal(),
                 Button("Close", id="displayed_datatypes_close_button"),
                 id="displayed_datatypes_button_container",
@@ -99,7 +96,7 @@ class DisplayedDatatypesScreen(ModalScreen):
         if not is_checked:
             self.datatype_config[datatype_name]["on"] = False
 
-        self.interface.update_tui_settings(
+        self.interface.save_tui_settings(
             self.datatype_config, self.settings_key
         )
 
@@ -180,7 +177,7 @@ class DatatypeCheckboxes(Static):
                     f"#{self.get_checkbox_name(datatype)}"
                 ).value
 
-        self.interface.update_tui_settings(
+        self.interface.save_tui_settings(
             self.datatype_config, self.settings_key
         )
 

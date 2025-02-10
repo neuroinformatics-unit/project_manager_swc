@@ -242,7 +242,7 @@ class TransferTab(TreeAndInputTab):
         if event.select.id == "transfer_tab_overwrite_select":
             assert event.select.value in ["Never", "Always", "If Source Newer"]
             format_select = event.select.value.lower().replace(" ", "_")
-            self.interface.update_tui_settings(
+            self.interface.save_tui_settings(
                 format_select,
                 "overwrite_existing_files",
             )
@@ -251,7 +251,7 @@ class TransferTab(TreeAndInputTab):
         if (
             event.checkbox.id == "transfer_tab_dry_run_checkbox"
         ):  # TODO: UPDATE NAMES TO INC. TAB! ALSO UPDATE TOOLTIPS
-            self.interface.update_tui_settings(
+            self.interface.save_tui_settings(
                 event.checkbox.value,
                 "dry_run",
             )

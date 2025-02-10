@@ -472,6 +472,6 @@ class TopLevelFolderSelect(Select):
 
         if event.value != Select.BLANK:
 
-            self.interface.update_tui_settings(
+            self.interface.save_tui_settings(
                 top_level_folder, "top_level_folder_select", self.settings_key
             )
