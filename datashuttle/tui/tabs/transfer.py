@@ -25,13 +25,11 @@ from textual.widgets import (
 
 from datashuttle.tui.custom_widgets import (
     ClickableInput,
-    DatatypeCheckboxes,
     TopLevelFolderSelect,
     TreeAndInputTab,
 )
-
-# TODO: MOVE! datatype checkboxes file.
-from datashuttle.tui.screens.create_folder_settings import (
+from datashuttle.tui.screens.datatypes import (
+    DatatypeCheckboxes,
     DisplayedDatatypesScreen,
 )
 from datashuttle.tui.screens.modal_dialogs import (

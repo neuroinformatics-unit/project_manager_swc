@@ -20,11 +20,13 @@ from textual.widgets import (
 from datashuttle.tui.custom_widgets import (
     ClickableInput,
     CustomDirectoryTree,
-    DatatypeCheckboxes,
     TreeAndInputTab,
 )
 from datashuttle.tui.screens.create_folder_settings import (
     CreateFoldersSettingsScreen,
+)
+from datashuttle.tui.screens.datatypes import (
+    DatatypeCheckboxes,
     DisplayedDatatypesScreen,
 )
 from datashuttle.tui.tooltips import get_tooltip

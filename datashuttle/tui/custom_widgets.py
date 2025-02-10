@@ -4,7 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Iterable,
     List,
-    Literal,
     Optional,
     Tuple,
     cast,
@@ -12,7 +11,6 @@ from typing import (
 
 if TYPE_CHECKING:
     from textual import events
-    from textual.app import ComposeResult
     from textual.validation import Validator
 
     from datashuttle.tui.app import App
@@ -24,116 +22,17 @@ from pathlib import Path
 import pyperclip
 from rich.style import Style
 from rich.text import Text
-from textual import on
 from textual._segment_tools import line_pad
 from textual.message import Message
 from textual.strip import Strip
 from textual.widgets import (
-    Checkbox,
     DirectoryTree,
     Input,
     Select,
-    Static,
     TabPane,
 )
 
 from datashuttle.configs import canonical_folders
-
-# --------------------------------------------------------------------------------------
-# DatatypeCheckboxes
-# --------------------------------------------------------------------------------------
-
-
-class DatatypeCheckboxes(Static):
-    """
-    Dynamically-populated checkbox widget for convenient datatype
-    selection during folder creation.
-
-    Parameters
-    ----------
-
-    settings_key : 'create' if datatype checkboxes for the create tab,
-                   'transfer' for the transfer tab. Transfer tab includes
-                   additional datatype options (e.g. "all").
-
-    Attributes
-    ----------
-
-    datatype_config : a Dictionary containing datatype as key (e.g. "ephys", "behav")
-                      and values are `bool` indicating whether the checkbox is on / off.
-                      If 'transfer', then transfer datatype arguments (e.g. "all")
-                      are also included. This structure mirrors
-                      the `persistent_settings` dictionaries.
-    """
-
-    def __init__(
-        self,
-        interface: Interface,
-        create_or_transfer: Literal["create", "transfer"] = "create",
-        id: Optional[str] = None,
-    ) -> None:
-        super(DatatypeCheckboxes, self).__init__(id=id)
-
-        self.interface = interface
-        self.create_or_transfer = create_or_transfer
-
-        if self.create_or_transfer == "create":
-            self.settings_key = "create_checkboxes_on"
-        else:
-            self.settings_key = "transfer_checkboxes_on"
-
-        # `datatype_config` is basically just a convenience wrapper
-        # around interface.get_tui_settings...
-        self.datatype_config = self.interface.get_tui_settings()[
-            self.settings_key
-        ]
-
-    def compose(self) -> ComposeResult:
-        for datatype_name, datatype_setting in self.datatype_config.items():
-            if datatype_setting["displayed"]:
-                yield Checkbox(
-                    datatype_name.replace("_", " "),
-                    id=self.get_checkbox_name(datatype_name),
-                    value=datatype_setting["on"],
-                )
-
-    @on(Checkbox.Changed)
-    def on_checkbox_changed(self) -> None:
-        """
-        When a checkbox is changed, update the `self.datatype_config`
-        to contain new boolean values for each datatype. Also update
-        the stored `persistent_settings`.
-
-        TODO: document this better. It is quite counter-intuitive because
-        we update everything for a single change. BUT it is better to compartmentalise
-        and doesn't incur any additional overhead. BUT check this is actually true
-        there is probably as better way
-        """
-        for datatype in self.datatype_config.keys():
-            if self.datatype_config[datatype]["displayed"]:
-                self.datatype_config[datatype]["on"] = self.query_one(
-                    f"#{self.get_checkbox_name(datatype)}"
-                ).value
-
-        self.interface.update_tui_settings(
-            self.datatype_config, self.settings_key
-        )
-
-    def selected_datatypes(self) -> List[str]:
-        """
-        Get the names of the datatype options for which the
-        checkboxes are switched on.
-        """
-        selected_datatypes = [
-            datatype
-            for datatype, settings in self.datatype_config.items()
-            if settings["on"]
-        ]
-        return selected_datatypes
-
-    def get_checkbox_name(self, datatype):
-        return f"{self.create_or_transfer}_{datatype}_checkbox"
-
 
 # --------------------------------------------------------------------------------------
 # ClickableInput
