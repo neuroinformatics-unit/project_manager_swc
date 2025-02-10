@@ -27,7 +27,13 @@ from textual.widgets.selection_list import Selection
 
 
 class DisplayedDatatypesScreen(ModalScreen):
-    """ """
+    """
+    Screen to select the which datatype checkboxes to show on the create / transfer tabs.
+
+    Display a SessionList widget which all canonical broad and narrow-type
+    datatypes. When selected, this will update DatatypeCheckboxes (coordinates
+    by the calling tab) with the checkboxes to show.
+    """
 
     def __init__(
         self,
@@ -39,18 +45,17 @@ class DisplayedDatatypesScreen(ModalScreen):
         self.interface = interface
         self.create_or_transfer = create_or_transfer
 
-        # TODO: this is copy and paste. TODO: move this to save thing as checkboxes.
-        if self.create_or_transfer == "create":
-            self.settings_key = "create_checkboxes_on"
-        else:
-            self.settings_key = "transfer_checkboxes_on"
+        self.settings_key = get_tui_settings_key_name(self.create_or_transfer)
 
         self.datatype_config = self.interface.get_tui_settings()[
             self.settings_key
         ]
 
     def compose(self) -> ComposeResult:
-
+        """
+        Collect the datatypes names and status from
+        the persistent settings and display.
+        """
         selections = [
             Selection(datatype, idx, setting["displayed"])
             for idx, (datatype, setting) in enumerate(
@@ -78,10 +83,7 @@ class DisplayedDatatypesScreen(ModalScreen):
         )
 
     def on_button_pressed(self, event):
-        """
-        For some reason had issues unless did all together, could not save
-        dynamically. should be clear with the 'Save' button.
-        """
+
         if event.button.id == "displayed_datatypes_close_button":
             self.dismiss()
 
@@ -139,10 +141,7 @@ class DatatypeCheckboxes(Static):
         self.interface = interface
         self.create_or_transfer = create_or_transfer
 
-        if self.create_or_transfer == "create":
-            self.settings_key = "create_checkboxes_on"
-        else:
-            self.settings_key = "transfer_checkboxes_on"
+        self.settings_key = get_tui_settings_key_name(self.create_or_transfer)
 
         # `datatype_config` is basically just a convenience wrapper
         # around interface.get_tui_settings...
@@ -195,3 +194,17 @@ class DatatypeCheckboxes(Static):
 
     def get_checkbox_name(self, datatype):
         return f"{self.create_or_transfer}_{datatype}_checkbox"
+
+
+# Helpers
+# --------------------------------------------------------------------------------------
+
+
+def get_tui_settings_key_name(
+    create_or_transfer: Literal["create", "transfer"]
+) -> str:
+    if create_or_transfer == "create":
+        settings_key = "create_checkboxes_on"
+    else:
+        settings_key = "transfer_checkboxes_on"
+    return settings_key
