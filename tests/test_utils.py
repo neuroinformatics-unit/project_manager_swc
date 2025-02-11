@@ -210,6 +210,9 @@ def get_test_config_arguments_dict(
 
 
 def get_all_broad_folders_used(value=True):
+    """
+    TODO DOC
+    """
     broad_datatypes = {
         name: value for name in canonical_configs.get_broad_datatypes()
     }

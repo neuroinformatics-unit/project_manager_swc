@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from datashuttle.tui.interface import Interface
     from datashuttle.utils.custom_types import Prefix
 
-from textual.containers import Horizontal
+from textual.containers import Container, Horizontal
 from textual.widgets import (
     Button,
     Label,
@@ -71,8 +71,10 @@ class CreateFoldersTab(TreeAndInputTab):
             validators=[NeuroBlueprintValidator("ses", self)],
         )
         yield Label("Datatype(s)", id="create_folders_datatype_label")
-        yield DatatypeCheckboxes(
-            self.interface, id="create_folders_datatype_checkboxes"
+        yield Container(
+            DatatypeCheckboxes(
+                self.interface, id="create_folders_datatype_checkboxes"
+            )
         )
         yield Horizontal(
             Button(
