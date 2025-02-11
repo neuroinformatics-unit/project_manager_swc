@@ -210,8 +210,13 @@ def get_test_config_arguments_dict(
 
 
 def get_all_broad_folders_used(value=True):
-    datatype_names = canonical_configs.get_broad_datatypes()
-    return {name: value for name in datatype_names}
+    broad_datatypes = {
+        name: value for name in canonical_configs.get_broad_datatypes()
+    }
+    narrow_datatypes_off = {
+        name: False for name in canonical_configs.quick_get_narrow_datatypes()
+    }
+    return broad_datatypes | narrow_datatypes_off
 
 
 # -----------------------------------------------------------------------------
@@ -232,8 +237,9 @@ def check_folder_tree_is_correct(
     check all exist.
 
     The folder_used variable must be passed so we don't
-    rely on project settings itself,
-    as this doesn't explicitly test this.
+    rely on project settings itself, as this doesn't explicitly test this.
+
+    `created_folder_dict` is used to test the output of `create_folders`.
     """
     if created_folder_dict is None:
         created_folder_dict = {}

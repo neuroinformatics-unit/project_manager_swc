@@ -2,6 +2,7 @@ import pytest
 import test_utils
 from tui_base import TuiBase
 
+from datashuttle.configs import canonical_configs
 from datashuttle.tui.app import TuiApp
 
 
@@ -263,7 +264,7 @@ class TestTuiTransfer(TuiBase):
                 top_level_folder,
                 subs,
                 sessions,
-                "all",
+                canonical_configs.get_broad_datatypes(),
             )
         (
             _,
