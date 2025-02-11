@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from datashuttle.tui.interface import Interface
 
 
+import copy
+
 from textual import on
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
@@ -28,11 +30,23 @@ from textual.widgets.selection_list import Selection
 
 class DisplayedDatatypesScreen(ModalScreen):
     """
-    Screen to select the which datatype checkboxes to show on the create / transfer tabs.
+    Screen to select the which datatype checkboxes to show on the Create / Transfer tabs.
 
     Display a SessionList widget which all canonical broad and narrow-type
     datatypes. When selected, this will update DatatypeCheckboxes (coordinates
     by the calling tab) with the checkboxes to show.
+
+    Notes
+    -----
+    A copy of the interface configs are held for the lifetime of this screen.
+    The persistent settings are updated only when the 'Save' button is pressed.
+    Note this is different to `DatatypeCheckboxes` which is saved on
+    every click. The reason this is not done here is because:
+        a) we have the choice not to because it is a screen with defined open / close point
+        b) clicking options very quickly is possible in this widget because the
+           checkboxes are so close together. Testing indicate that when writing to
+           file after each click, syncing could get messed up and the wrong checkboxes
+           displayed on the window.
     """
 
     def __init__(
@@ -47,9 +61,9 @@ class DisplayedDatatypesScreen(ModalScreen):
 
         self.settings_key = get_tui_settings_key_name(self.create_or_transfer)
 
-        self.datatype_config = self.interface.get_tui_settings()[
-            self.settings_key
-        ]
+        self.datatype_config = copy.deepcopy(
+            self.interface.get_tui_settings()[self.settings_key]
+        )
 
     def compose(self) -> ComposeResult:
         """
@@ -75,6 +89,7 @@ class DisplayedDatatypesScreen(ModalScreen):
             ),
             Vertical(),
             Horizontal(
+                Button("Save", id="displayed_datatypes_save_button"),
                 Horizontal(),
                 Button("Close", id="displayed_datatypes_close_button"),
                 id="displayed_datatypes_button_container",
@@ -83,24 +98,33 @@ class DisplayedDatatypesScreen(ModalScreen):
         )
 
     def on_button_pressed(self, event):
+        """
+        When 'Save' is pressed, the configs copied on this class
+        are updated back onto the interface configs, and written to disk.
+        Otherwise, close the screen without saving.
+        """
+        if event.button.id == "displayed_datatypes_save_button":
+            self.interface.save_tui_settings(
+                self.datatype_config, self.settings_key
+            )
+            self.dismiss()
 
-        if event.button.id == "displayed_datatypes_close_button":
+        elif event.button.id == "displayed_datatypes_close_button":
             self.dismiss()
 
     def on_selection_list_selection_toggled(
-        self, event
-    ):  # SelectionMessage I think
-        """ """
+        self, event: SelectionList.SelectionMessage.SelectionToggled
+    ):
+        """
+        When a selection is toggled, update the configs with
+        the 'displayed' status and save to disk.
+        """
         datatype_name = event.selection.prompt.plain
         is_checked = not event.selection.initial_state
         self.datatype_config[datatype_name]["displayed"] = is_checked
 
         if not is_checked:
             self.datatype_config[datatype_name]["on"] = False
-
-        self.interface.save_tui_settings(
-            self.datatype_config, self.settings_key
-        )
 
 
 # --------------------------------------------------------------------------------------
@@ -128,6 +152,13 @@ class DatatypeCheckboxes(Static):
                       If 'transfer', then transfer datatype arguments (e.g. "all")
                       are also included. This structure mirrors
                       the `persistent_settings` dictionaries.
+
+    Notes
+    -----
+    The use of persistent configs is similar to `DisplayedDatatypesScreen`,
+    however because this screen persists through the lifetime of the app
+    there is no clear time point in which to save the checkbox status.
+    Therefore, the configs are updated (written to disk) on each click.
     """
 
     def __init__(
@@ -144,7 +175,7 @@ class DatatypeCheckboxes(Static):
         self.settings_key = get_tui_settings_key_name(self.create_or_transfer)
 
         # `datatype_config` is basically just a convenience wrapper
-        # around interface.get_tui_settings...
+        # around interface.get_tui_settings
         self.datatype_config = self.interface.get_tui_settings()[
             self.settings_key
         ]
@@ -164,11 +195,6 @@ class DatatypeCheckboxes(Static):
         When a checkbox is changed, update the `self.datatype_config`
         to contain new boolean values for each datatype. Also update
         the stored `persistent_settings`.
-
-        TODO: document this better. It is quite counter-intuitive because
-        we update everything for a single change. BUT it is better to compartmentalise
-        and doesn't incur any additional overhead. BUT check this is actually true
-        there is probably as better way
         """
         for datatype in self.datatype_config.keys():
             if self.datatype_config[datatype]["displayed"]:

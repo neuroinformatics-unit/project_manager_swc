@@ -41,8 +41,8 @@ class CreateFoldersSettingsScreen(ModalScreen):
     the window is closed, the `name_template` is stored in datashuttle's
     persistent settings.
 
-    The Create tab validation on Inputs is immediately updated on closing
-    of this screen.
+    The Create tab validation of input widgets is immediately updated
+    on closing of this screen.
 
     Attributes
     ----------
