@@ -209,8 +209,8 @@ def get_test_config_arguments_dict(
     return dict_
 
 
-def get_all_folders_used(value=True):
-    datatype_names = canonical_configs.get_datatypes()
+def get_all_broad_folders_used(value=True):
+    datatype_names = canonical_configs.get_broad_datatypes()
     return {name: value for name in datatype_names}
 
 
@@ -334,7 +334,7 @@ def check_datatype_sub_ses_uploaded_correctly(
 
 
 def make_and_check_local_project_folders(
-    project, top_level_folder, subs, sessions, datatype
+    project, top_level_folder, subs, sessions, datatype, datatypes_used=None
 ):
     """
     Make a local project folder tree with the specified datatype,
@@ -344,6 +344,9 @@ def make_and_check_local_project_folders(
     to write a placeholder file in all bottom-level
     directories so ensure they are transferred.
     """
+    if datatypes_used is None:
+        datatypes_used = get_all_broad_folders_used()
+
     make_local_folders_with_files_in(
         project, top_level_folder, subs, sessions, datatype
     )
@@ -352,7 +355,7 @@ def make_and_check_local_project_folders(
         get_top_level_folder_path(project, "local", top_level_folder),
         subs,
         sessions,
-        get_all_folders_used(),
+        datatypes_used,
     )
 
 
@@ -610,7 +613,7 @@ def check_working_top_level_folder_only_exists(
     do not inadvertently transfer other top-level folders.
     """
     if folders_used is None:
-        folders_used = get_all_folders_used()
+        folders_used = get_all_broad_folders_used()
 
     check_folder_tree_is_correct(
         base_path_to_check,

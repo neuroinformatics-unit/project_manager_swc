@@ -933,7 +933,9 @@ class TestTuiWidgets(TuiBase):
 
             # Cycle through all checkboxes, turning on sequentially and
             # checking all configs are correct.
-            expected_create = test_utils.get_all_folders_used(value=False)
+            expected_create = test_utils.get_all_broad_folders_used(
+                value=False
+            )
 
             for datatype in ["behav", "ephys", "funcimg", "anat"]:
                 await self.change_checkbox(
@@ -949,7 +951,9 @@ class TestTuiWidgets(TuiBase):
             # are still correct.
             await self.change_checkbox(pilot, "#create_ephys_checkbox")
             await self.change_checkbox(pilot, "#create_anat_checkbox")
-            expected_create = test_utils.get_all_folders_used(value=False)
+            expected_create = test_utils.get_all_broad_folders_used(
+                value=False
+            )
             expected_create.update({"behav": True, "funcimg": True})
 
             await self.exit_to_main_menu_and_reeneter_project_manager(
@@ -968,7 +972,9 @@ class TestTuiWidgets(TuiBase):
 
             await self.turn_off_all_datatype_checkboxes(pilot, tab="transfer")
 
-            expected_transfer = test_utils.get_all_folders_used(value=False)
+            expected_transfer = test_utils.get_all_broad_folders_used(
+                value=False
+            )
             expected_transfer.update(
                 {
                     "all": False,

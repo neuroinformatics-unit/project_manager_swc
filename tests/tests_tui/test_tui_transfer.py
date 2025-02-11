@@ -207,7 +207,7 @@ class TestTuiTransfer(TuiBase):
 
             await self.run_transfer(pilot, upload_or_download)
 
-            folders_used = test_utils.get_all_folders_used(value=False)
+            folders_used = test_utils.get_all_broad_folders_used(value=False)
             folders_used.update({"behav": True, "funcimg": True})
 
             test_utils.check_working_top_level_folder_only_exists(
