@@ -42,8 +42,8 @@ class DisplayedDatatypesScreen(ModalScreen):
     The persistent settings are updated only when the 'Save' button is pressed.
     Note this is different to `DatatypeCheckboxes` which is saved on
     every click. The reason this is not done here is because:
-        a) we have the choice not to because it is a screen with defined open / close point
-        b) clicking options very quickly is possible in this widget because the
+        a) We have the choice not to because it is a screen with defined open / close point
+        b) Clicking options very quickly is possible in this widget because the
            checkboxes are so close together. Testing indicate that when writing to
            file after each click, syncing could get messed up and the wrong checkboxes
            displayed on the window.

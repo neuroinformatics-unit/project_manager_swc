@@ -232,8 +232,6 @@ def get_tui_config_defaults() -> Dict:
         }
     }
 
-    narrow_datatypes = get_narrow_datatypes()
-
     # Fill all datatype options
     for broad_key in get_broad_datatypes():
 
@@ -246,16 +244,15 @@ def get_tui_config_defaults() -> Dict:
             "displayed": True,
         }
 
-        if broad_key in narrow_datatypes:
-            for narrow_key in narrow_datatypes[broad_key]:
-                settings["tui"]["create_checkboxes_on"][narrow_key] = {  # type: ignore
-                    "on": False,
-                    "displayed": False,
-                }
-                settings["tui"]["transfer_checkboxes_on"][narrow_key] = {  # type: ignore
-                    "on": False,
-                    "displayed": False,
-                }
+    for narrow_key in quick_get_narrow_datatypes():
+        settings["tui"]["create_checkboxes_on"][narrow_key] = {  # type: ignore
+            "on": False,
+            "displayed": False,
+        }
+        settings["tui"]["transfer_checkboxes_on"][narrow_key] = {  # type: ignore
+            "on": False,
+            "displayed": False,
+        }
 
     return settings
 
@@ -287,18 +284,7 @@ def get_datatypes() -> List[str]:
 
     This must be kept up to date with the datatypes in the NeuroBLueprint specification.
     """
-    all_datatypes = []
-
-    broad_datatypes = get_broad_datatypes()
-    narrow_datatypes = get_narrow_datatypes()
-
-    for datatype in broad_datatypes:
-        if datatype in narrow_datatypes:
-            all_datatypes += narrow_datatypes[datatype]
-
-    all_datatypes += broad_datatypes
-
-    return all_datatypes
+    return get_broad_datatypes() + quick_get_narrow_datatypes()
 
 
 def get_broad_datatypes():
@@ -330,6 +316,15 @@ def get_narrow_datatypes():
             "mri",
         ],
     }
+
+
+def quick_get_narrow_datatypes():
+    all_narrow_datatypes = get_narrow_datatypes()
+    top_level_keys = list(all_narrow_datatypes.keys())
+    flat_narrow_datatypes = []
+    for key in top_level_keys:
+        flat_narrow_datatypes += all_narrow_datatypes[key]
+    return flat_narrow_datatypes
 
 
 def in_place_update_settings_for_narrow_datatype(settings: dict):
