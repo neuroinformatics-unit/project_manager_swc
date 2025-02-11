@@ -292,6 +292,10 @@ def get_broad_datatypes():
 
 
 def get_narrow_datatypes():
+    """
+    Return the narrow datatype associated with each broad datatype.
+    The mapping between broad and narrow datatypes is required for validation.
+    """
     return {
         "ephys": ["ecephys", "icephys"],
         "funcimg": ["cscope", "f2pe", "fmri", "fusi"],
@@ -319,11 +323,17 @@ def get_narrow_datatypes():
 
 
 def quick_get_narrow_datatypes():
+    """
+    A convenience wrapper around `get_narrow_datatypes()`
+    to quickly get a list of all narrow datatypes.
+    """
     all_narrow_datatypes = get_narrow_datatypes()
     top_level_keys = list(all_narrow_datatypes.keys())
     flat_narrow_datatypes = []
+
     for key in top_level_keys:
         flat_narrow_datatypes += all_narrow_datatypes[key]
+
     return flat_narrow_datatypes
 
 
