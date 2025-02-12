@@ -328,13 +328,21 @@ def raise_error_or_warn(
     Given an error message, raise an error or warning, and log or
     do not log, depending on the passed arguments.
     """
-    assert error_or_warn in ["error", "warn"], "Must be 'error' or 'warn'."
-
     if error_or_warn == "error":
         utils.log_and_raise_error(message, NeuroBlueprintError)
 
-    else:
+    elif error_or_warn == "warn":
         utils.warn(message, log=log)
+
+    elif error_or_warn == "print":
+        if log:
+            utils.log_and_message(message)
+        else:
+            utils.print_message_to_user(message)
+    else:
+        raise ValueError(
+            "`error_or_warn` must be either 'error', 'warn', 'print'."
+        )
 
 
 # -----------------------------------------------------------------------------
