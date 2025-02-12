@@ -4,6 +4,7 @@ import shutil
 import pytest
 from base import BaseTest
 
+from datashuttle import quick_validate_project
 from datashuttle.utils import formatting, validation
 from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 
@@ -701,3 +702,51 @@ class TestValidation(BaseTest):
                 "rawdata",
                 "sub-03_mime_010101",
             )
+
+    # ----------------------------------------------------------------------------------
+    # Test Quick Validation Function
+    # ----------------------------------------------------------------------------------
+
+    def test_quick_validation(self, mocker, project):
+        """ """
+        project.create_folders("rawdata", "sub-1")
+        os.makedirs(project.cfg["local_path"] / "rawdata" / "sub-02")
+        project.create_folders("derivatives", "sub-1")
+        os.makedirs(project.cfg["local_path"] / "derivatives" / "sub-02")
+
+        with pytest.warns(UserWarning) as w:
+            quick_validate_project(
+                project.get_local_path(),
+                display_mode="warn",
+                top_level_folder=None,
+            )
+
+        assert "Inconsistent value lengths" in str(w[0].message)
+        assert "Inconsistent value lengths" in str(w[1].message)
+        assert len(w) == 2
+
+        # For good measure, monkeypatch and change all defaults,
+        # ensuring they are propagated to the validate_project
+        # function (which is tested above)
+        import datashuttle
+
+        spy_validate_func = mocker.spy(
+            datashuttle.datashuttle_functions.validation, "validate_project"
+        )
+
+        quick_validate_project(
+            project.get_local_path(),
+            display_mode="print",
+            top_level_folder="derivatives",
+            name_templates={"on": False},
+        )
+
+        _, kwargs = spy_validate_func.call_args_list[0]
+        assert kwargs["display_mode"] == "print"
+        assert kwargs["top_level_folder"] == "derivatives"
+        assert kwargs["name_templates"] == {"on": False}
+
+    def test_quick_validation_top_level_folder(self):
+        """ """
+        # check all top-level folder errors
+        pass

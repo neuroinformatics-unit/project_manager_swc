@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
-    from datashuttle.utils.custom_types import DisplayMode
+    from datashuttle.utils.custom_types import DisplayMode, TopLevelFolder
 from pathlib import Path
 from typing import (
-    Literal,
     Optional,
 )
 
@@ -18,38 +17,46 @@ from datashuttle.utils import (
     validation,
 )
 
-# TODO
-# ----
-# add print as an output option
-# add new stream to get all validation errors separated by \n
-# add tests
-# add docs
 
-# on another PR
-# improve validation - there are a few missed cases
-# add validation to TUI
-
-# Then just the docs rewrite!
-
-
-# TODO: add 'print' option
 def quick_validate_project(
     project_path: str | Path,
-    top_level_folder: Optional[Literal["rawdata", "derivatives"]] = None,
+    top_level_folder: Optional[TopLevelFolder] = None,
     display_mode: DisplayMode = "warn",
-    name_templates: Optional[dict] = None,
+    name_templates: Optional[Dict] = None,
 ):
-    """ """
-    # TODO: search for top level folders and raise if not exist
-    # assert rawdata or derivatives here
-    rawdata_and_derivatives = ["rawdata", "derivatives"]
+    """
+    Perform validation on the project. This checks the subject
+    and session level folders to ensure there are not
+    NeuroBlueprint formatting issues.
+
+    Parameters
+    ----------
+
+    project_path
+        Path to the project to validate. Must include the project
+        name, and hold a "rawdata" or "derivatives" folder.
+
+    top_level_folder : TopLevelFolder
+        The top-level folder ("rawdata" or "derivatives" to
+        perform validation. If `None`, both are checked.
+
+    display_mode : DisplayMode
+        The validation issues are displayed as ``"error"`` (raise error)
+        ``"warn"`` (show warning) or ``"print"``.
+
+    name_templates : Dict
+        A dictionary of templates for subject and session name
+        to validate against. See ``DataShuttle.set_name_templates()``
+        for details.
+    """
     project_path = Path(project_path)
 
+    # Check that the project file exists and contains
+    # at least one top-level folder
     if not project_path.is_dir():
         raise FileNotFoundError(
             f"No file or folder found at `project_path`: {project_path}"
         )
-
     if (
         not (project_path / "rawdata").is_dir()
         or not (project_path / "derivatives").is_dir()
@@ -57,6 +64,9 @@ def quick_validate_project(
         raise FileNotFoundError(
             "`project_path` must contain a 'rawdata' or 'derivatives' folder."
         )
+
+    # Format the top-level folders into a list
+    rawdata_and_derivatives = ["rawdata", "derivatives"]
 
     if top_level_folder is None:
         top_level_folders_to_validate = rawdata_and_derivatives
@@ -67,6 +77,8 @@ def quick_validate_project(
             )
         top_level_folders_to_validate = [top_level_folder]
 
+    # Create some mock configs for the validation call,
+    # then for each top-level folder, run the validation
     placeholder_configs = {
         key: None for key in canonical_configs.get_canonical_configs().keys()
     }
