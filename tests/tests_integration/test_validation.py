@@ -746,7 +746,24 @@ class TestValidation(BaseTest):
         assert kwargs["top_level_folder"] == "derivatives"
         assert kwargs["name_templates"] == {"on": False}
 
-    def test_quick_validation_top_level_folder(self):
-        """ """
-        # check all top-level folder errors
-        pass
+    def test_quick_validation_top_level_folder(self, project):
+        """
+        Test that errors are raised as expected on
+        bad project path input.
+        """
+        with pytest.raises(FileNotFoundError) as e:
+            quick_validate_project(
+                project.get_local_path() / "does not exist",
+                display_mode="error",
+            )
+        assert "No file or folder found at `project_path`" in str(e.value)
+
+        with pytest.raises(FileNotFoundError) as e:
+            quick_validate_project(
+                project.get_local_path(),
+                display_mode="error",
+            )
+        assert (
+            str(e.value)
+            == "`project_path` must contain a 'rawdata' or 'derivatives' folder."
+        )
