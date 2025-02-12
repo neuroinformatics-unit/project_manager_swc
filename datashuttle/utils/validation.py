@@ -21,7 +21,7 @@ from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 def validate_list_of_names(
     names_list: List[str],
     prefix: Prefix,
-    error_or_warn: Literal["error", "warn"] = "error",
+    display_mode: Literal["error", "warn"] = "error",
     check_duplicates: bool = True,
     name_templates: Optional[Dict] = None,
     log: bool = True,
@@ -39,7 +39,7 @@ def validate_list_of_names(
     prefix: Prefix
         Whether these are subject (sub) or session (ses) level names
 
-    error_or_warn: Literal["error", "warn"]
+    display_mode: Literal["error", "warn"]
         If an invalid case is found, whether to raise error or warning
 
     check_duplicates : bool
@@ -73,7 +73,7 @@ def validate_list_of_names(
     for test in tests_to_run:
         failed, message = test()
         if failed:
-            raise_error_or_warn(message, error_or_warn, log)
+            raise_display_mode(message, display_mode, log)
 
 
 def names_dont_match_templates(
@@ -321,27 +321,27 @@ def duplicated_prefix_values(
     return False, ""
 
 
-def raise_error_or_warn(
-    message: str, error_or_warn: Literal["error", "warn"], log: bool
+def raise_display_mode(
+    message: str, display_mode: Literal["error", "warn"], log: bool
 ) -> None:
     """
     Given an error message, raise an error or warning, and log or
     do not log, depending on the passed arguments.
     """
-    if error_or_warn == "error":
+    if display_mode == "error":
         utils.log_and_raise_error(message, NeuroBlueprintError)
 
-    elif error_or_warn == "warn":
+    elif display_mode == "warn":
         utils.warn(message, log=log)
 
-    elif error_or_warn == "print":
+    elif display_mode == "print":
         if log:
             utils.log_and_message(message)
         else:
             utils.print_message_to_user(message)
     else:
         raise ValueError(
-            "`error_or_warn` must be either 'error', 'warn', 'print'."
+            "`display_mode` must be either 'error', 'warn', 'print'."
         )
 
 
@@ -354,7 +354,7 @@ def validate_project(
     cfg: Configs,
     top_level_folder: TopLevelFolder,
     local_only: bool = False,
-    error_or_warn: Literal["error", "warn"] = "error",
+    display_mode: Literal["error", "warn"] = "error",
     log: bool = True,
     name_templates: Optional[Dict] = None,
 ) -> None:
@@ -383,7 +383,7 @@ def validate_project(
         be validated. Otherwise, project folders in both the `local_path`
         and `central_path` will be validated.
 
-    error_or_warn : Literal["error", "warn"]
+    display_mode : Literal["error", "warn"]
         Determine whether error or warning is raised.
 
     log : bool
@@ -399,7 +399,7 @@ def validate_project(
     validate_list_of_names(
         sub_names,
         prefix="sub",
-        error_or_warn=error_or_warn,
+        display_mode=display_mode,
         log=log,
         check_duplicates=False,
         name_templates=name_templates,
@@ -408,7 +408,7 @@ def validate_project(
     for sub in sub_names:
         failed, message = new_name_duplicates_existing(sub, sub_names, "sub")
         if failed:
-            raise_error_or_warn(message, error_or_warn, log)
+            raise_display_mode(message, display_mode, log)
 
     # Check sessions
     all_ses_names = list(chain(*folder_names["ses"].values()))
@@ -417,7 +417,7 @@ def validate_project(
         all_ses_names,
         "ses",
         check_duplicates=False,
-        error_or_warn=error_or_warn,
+        display_mode=display_mode,
         log=log,
     )
 
@@ -427,7 +427,7 @@ def validate_project(
                 ses, ses_names, "ses"
             )
             if failed:
-                raise_error_or_warn(message, error_or_warn, log)
+                raise_display_mode(message, display_mode, log)
 
 
 def validate_names_against_project(
@@ -436,7 +436,7 @@ def validate_names_against_project(
     sub_names: List[str],
     ses_names: Optional[List[str]] = None,
     local_only: bool = False,
-    error_or_warn: Literal["error", "warn"] = "error",
+    display_mode: Literal["error", "warn"] = "error",
     log: bool = True,
     name_templates: Optional[Dict] = None,
 ) -> None:
@@ -485,7 +485,7 @@ def validate_names_against_project(
         be validated against. Otherwise, project folders in both the
         `local_path` and `central_path` will be validated against.
 
-    error_or_warn : Literal["error", "warn"]
+    display_mode : Literal["error", "warn"]
         Determine whether error or warning is raised.
 
     log : bool
@@ -507,14 +507,14 @@ def validate_names_against_project(
             sub_names,
             prefix="sub",
             check_duplicates=True,
-            error_or_warn=error_or_warn,
+            display_mode=display_mode,
             name_templates=name_templates,
         )
 
         valid_sub_in_project = strip_invalid_names(folder_names["sub"], "sub")
 
         check_sub_names_value_length_are_consistent_with_project(
-            sub_names, valid_sub_in_project, error_or_warn, log
+            sub_names, valid_sub_in_project, display_mode, log
         )
 
         for new_sub in sub_names:
@@ -523,7 +523,7 @@ def validate_names_against_project(
                 new_sub, valid_sub_in_project, "sub"
             )
             if failed:
-                raise_error_or_warn(message, error_or_warn, log)
+                raise_display_mode(message, display_mode, log)
 
     # Check sessions
     if folder_names["sub"] and ses_names is not None:
@@ -532,7 +532,7 @@ def validate_names_against_project(
             ses_names,
             "ses",
             check_duplicates=True,
-            error_or_warn=error_or_warn,
+            display_mode=display_mode,
         )
 
         # For all the subjects, check that the ses_names are valid
@@ -545,7 +545,7 @@ def validate_names_against_project(
                 )
 
                 check_ses_names_value_length_are_consistent_with_project(
-                    ses_names, valid_ses_in_sub, new_sub, error_or_warn, log
+                    ses_names, valid_ses_in_sub, new_sub, display_mode, log
                 )
 
                 for new_ses in ses_names:
@@ -553,13 +553,13 @@ def validate_names_against_project(
                         new_ses, valid_ses_in_sub, "ses"
                     )
                     if failed:
-                        raise_error_or_warn(message, error_or_warn, log)
+                        raise_display_mode(message, display_mode, log)
 
 
 def check_sub_names_value_length_are_consistent_with_project(
     sub_names: List[str],
     valid_sub_in_project: List[str],
-    error_or_warn: Literal["error", "warn"],
+    display_mode: Literal["error", "warn"],
     log: bool,
 ) -> None:
     """
@@ -573,11 +573,11 @@ def check_sub_names_value_length_are_consistent_with_project(
     otherwise.
     """
     if value_lengths_are_inconsistent(valid_sub_in_project, "sub")[0]:
-        raise_error_or_warn(
+        raise_display_mode(
             "Cannot check names for inconsistent value lengths "
             "because the subject value lengths are not consistent "
             "across the project.",
-            error_or_warn,
+            display_mode,
             log,
         )
     else:
@@ -585,14 +585,14 @@ def check_sub_names_value_length_are_consistent_with_project(
             sub_names + valid_sub_in_project, "sub"
         )
         if failed:
-            raise_error_or_warn(message, error_or_warn, log)
+            raise_display_mode(message, display_mode, log)
 
 
 def check_ses_names_value_length_are_consistent_with_project(
     ses_names: List[str],
     valid_ses_in_sub: List[str],
     sub_name: str,
-    error_or_warn: Literal["error", "warn"],
+    display_mode: Literal["error", "warn"],
     log: bool,
 ) -> None:
     """
@@ -601,11 +601,11 @@ def check_ses_names_value_length_are_consistent_with_project(
     with that function, just some minor annoying differences.
     """
     if value_lengths_are_inconsistent(valid_ses_in_sub, "ses")[0]:
-        raise_error_or_warn(
+        raise_display_mode(
             f"Cannot check names for inconsistent value lengths "
             f"because the session value lengths for subject "
             f"{sub_name} are not consistent.",
-            error_or_warn,
+            display_mode,
             log,
         )
     else:
@@ -613,7 +613,7 @@ def check_ses_names_value_length_are_consistent_with_project(
             ses_names + valid_ses_in_sub, "ses"
         )
         if failed:
-            raise_error_or_warn(message, error_or_warn, log)
+            raise_display_mode(message, display_mode, log)
 
 
 def strip_invalid_names(all_names: List[str], prefix: Prefix) -> List[str]:

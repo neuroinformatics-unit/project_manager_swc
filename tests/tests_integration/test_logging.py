@@ -459,7 +459,7 @@ class TestLogging:
 
         # Check a validation error is logged.
         with pytest.raises(BaseException) as e:
-            project.validate_project("rawdata", error_or_warn="error")
+            project.validate_project("rawdata", display_mode="error")
 
         log = test_utils.read_log_file(project.cfg.logging_path)
         assert "ERROR" in log
@@ -469,7 +469,7 @@ class TestLogging:
 
         # Check that validation warnings are logged.
         with pytest.warns(UserWarning) as w:
-            project.validate_project("rawdata", error_or_warn="warn")
+            project.validate_project("rawdata", display_mode="warn")
 
         log = test_utils.read_log_file(project.cfg.logging_path)
 

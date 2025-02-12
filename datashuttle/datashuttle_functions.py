@@ -16,7 +16,6 @@ from datashuttle.utils import (
 
 # TODO
 # ----
-# move function
 # add print as an output option
 # add new stream to get all validation errors separated by \n
 # add tests
@@ -33,7 +32,7 @@ from datashuttle.utils import (
 def quick_validate_project(
     project_path: str | Path,
     top_level_folder: Optional[Literal["rawdata", "derivatives"]] = None,
-    error_or_warn: Literal["error", "warn"] = "warn",
+    display_mode: Literal["error", "warn"] = "warn",
     name_templates: Optional[dict] = None,
 ):
     """ """
@@ -80,6 +79,6 @@ def quick_validate_project(
             cfg=cfg,
             top_level_folder=folder,  # type: ignore
             local_only=True,
-            error_or_warn=error_or_warn,
+            display_mode=display_mode,
             name_templates=name_templates,
         )
