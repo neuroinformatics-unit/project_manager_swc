@@ -153,7 +153,7 @@ class TestValidation(BaseTest):
         """"""
         with pytest.warns(UserWarning) as w:
             project.validate_project(
-                "rawdata", error_or_warn="warn", local_only=False
+                "rawdata", display_mode="warn", local_only=False
             )
 
         assert (
@@ -322,7 +322,7 @@ class TestValidation(BaseTest):
 
         # The bad sub name is not caught when testing locally only.
         project.validate_project(
-            "rawdata", error_or_warn="error", local_only=True
+            "rawdata", display_mode="error", local_only=True
         )
 
         project.create_folders("rawdata", "sub-001")
@@ -330,7 +330,7 @@ class TestValidation(BaseTest):
         # Now the bad sub is caught as we check against central also.
         with pytest.raises(NeuroBlueprintError) as e:
             project.validate_project(
-                "rawdata", error_or_warn="error", local_only=False
+                "rawdata", display_mode="error", local_only=False
             )
 
         assert (
@@ -346,7 +346,7 @@ class TestValidation(BaseTest):
 
         with pytest.warns(UserWarning) as w:
             project.validate_project(
-                "rawdata", error_or_warn="warn", local_only=False
+                "rawdata", display_mode="warn", local_only=False
             )
 
         assert "Inconsistent value lengths for the key sub" in str(
@@ -369,7 +369,7 @@ class TestValidation(BaseTest):
 
         with pytest.warns(UserWarning) as w:
             project.validate_project(
-                "rawdata", error_or_warn="warn", local_only=False
+                "rawdata", display_mode="warn", local_only=False
             )
 
         assert "Inconsistent value lengths for the key sub were found." in str(
@@ -498,7 +498,7 @@ class TestValidation(BaseTest):
                 "rawdata",
                 ["sub-003"],
                 local_only=True,
-                error_or_warn="error",
+                display_mode="error",
             )
         assert (
             "Cannot check names for inconsistent value lengths because the subject value"
@@ -522,7 +522,7 @@ class TestValidation(BaseTest):
             "rawdata",
             sub_names,
             local_only=True,
-            error_or_warn="error",
+            display_mode="error",
         )
 
         # Now check a clashing subject (sub-1) throws an error
@@ -534,7 +534,7 @@ class TestValidation(BaseTest):
                 "rawdata",
                 sub_names,
                 local_only=True,
-                error_or_warn="error",
+                display_mode="error",
             )
         assert (
             "same sub id as sub-1_id-11. "
@@ -550,7 +550,7 @@ class TestValidation(BaseTest):
                 "rawdata",
                 sub_names,
                 local_only=True,
-                error_or_warn="warn",
+                display_mode="warn",
             )
         # this warning arises from inconsistent value lengths within the
         # passed sub_names
@@ -584,7 +584,7 @@ class TestValidation(BaseTest):
             "rawdata",
             sub_names,
             local_only=True,
-            error_or_warn="error",
+            display_mode="error",
         )
 
         with pytest.raises(NeuroBlueprintError) as e:
@@ -593,7 +593,7 @@ class TestValidation(BaseTest):
                 "rawdata",
                 sub_names,
                 local_only=False,
-                error_or_warn="error",
+                display_mode="error",
             )
 
         assert (
@@ -622,7 +622,7 @@ class TestValidation(BaseTest):
             sub_names,
             ses_names,
             local_only=False,
-            error_or_warn="error",
+            display_mode="error",
         )
 
         # ses-002 is bad for sub-2, ses-003 is bad for sub-4
@@ -636,7 +636,7 @@ class TestValidation(BaseTest):
                 sub_names,
                 ses_names,
                 local_only=False,
-                error_or_warn="warn",
+                display_mode="warn",
             )
 
         assert (

@@ -95,7 +95,7 @@ class TestPersistentSettings(BaseTest):
                 [bad_sub],
                 ses_names=None,
                 local_only=True,
-                error_or_warn="error",
+                display_mode="error",
                 name_templates=reload_name_templates,
             )
         assert "does not match the template:" in str(e.value)
