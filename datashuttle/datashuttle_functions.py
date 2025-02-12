@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datashuttle.utils.custom_types import DisplayMode
 from pathlib import Path
 from typing import (
     Literal,
@@ -32,7 +36,7 @@ from datashuttle.utils import (
 def quick_validate_project(
     project_path: str | Path,
     top_level_folder: Optional[Literal["rawdata", "derivatives"]] = None,
-    display_mode: Literal["error", "warn"] = "warn",
+    display_mode: DisplayMode = "warn",
     name_templates: Optional[dict] = None,
 ):
     """ """

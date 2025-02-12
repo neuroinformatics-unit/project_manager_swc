@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from datashuttle.configs.config_class import Configs
-    from datashuttle.utils.custom_types import Prefix, TopLevelFolder
+    from datashuttle.utils.custom_types import (
+        DisplayMode,
+        Prefix,
+        TopLevelFolder,
+    )
 
 from itertools import chain
 
@@ -21,7 +25,7 @@ from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 def validate_list_of_names(
     names_list: List[str],
     prefix: Prefix,
-    display_mode: Literal["error", "warn"] = "error",
+    display_mode: DisplayMode = "error",
     check_duplicates: bool = True,
     name_templates: Optional[Dict] = None,
     log: bool = True,
@@ -39,7 +43,7 @@ def validate_list_of_names(
     prefix: Prefix
         Whether these are subject (sub) or session (ses) level names
 
-    display_mode: Literal["error", "warn"]
+    display_mode: DisplayMode
         If an invalid case is found, whether to raise error or warning
 
     check_duplicates : bool
@@ -322,7 +326,7 @@ def duplicated_prefix_values(
 
 
 def raise_display_mode(
-    message: str, display_mode: Literal["error", "warn"], log: bool
+    message: str, display_mode: DisplayMode, log: bool
 ) -> None:
     """
     Given an error message, raise an error or warning, and log or
@@ -354,7 +358,7 @@ def validate_project(
     cfg: Configs,
     top_level_folder: TopLevelFolder,
     local_only: bool = False,
-    display_mode: Literal["error", "warn"] = "error",
+    display_mode: DisplayMode = "error",
     log: bool = True,
     name_templates: Optional[Dict] = None,
 ) -> None:
@@ -383,7 +387,7 @@ def validate_project(
         be validated. Otherwise, project folders in both the `local_path`
         and `central_path` will be validated.
 
-    display_mode : Literal["error", "warn"]
+    display_mode : DisplayMode
         Determine whether error or warning is raised.
 
     log : bool
@@ -436,7 +440,7 @@ def validate_names_against_project(
     sub_names: List[str],
     ses_names: Optional[List[str]] = None,
     local_only: bool = False,
-    display_mode: Literal["error", "warn"] = "error",
+    display_mode: DisplayMode = "error",
     log: bool = True,
     name_templates: Optional[Dict] = None,
 ) -> None:
@@ -485,7 +489,7 @@ def validate_names_against_project(
         be validated against. Otherwise, project folders in both the
         `local_path` and `central_path` will be validated against.
 
-    display_mode : Literal["error", "warn"]
+    display_mode : DisplayMode
         Determine whether error or warning is raised.
 
     log : bool
@@ -559,7 +563,7 @@ def validate_names_against_project(
 def check_sub_names_value_length_are_consistent_with_project(
     sub_names: List[str],
     valid_sub_in_project: List[str],
-    display_mode: Literal["error", "warn"],
+    display_mode: DisplayMode,
     log: bool,
 ) -> None:
     """
@@ -592,7 +596,7 @@ def check_ses_names_value_length_are_consistent_with_project(
     ses_names: List[str],
     valid_ses_in_sub: List[str],
     sub_name: str,
-    display_mode: Literal["error", "warn"],
+    display_mode: DisplayMode,
     log: bool,
 ) -> None:
     """

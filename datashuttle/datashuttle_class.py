@@ -19,6 +19,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from datashuttle.utils.custom_types import (
+        DisplayMode,
         OverwriteExistingFiles,
         Prefix,
         TopLevelFolder,
@@ -1191,7 +1192,7 @@ class DataShuttle:
     def validate_project(
         self,
         top_level_folder: TopLevelFolder,
-        display_mode: Literal["error", "warn"],
+        display_mode: DisplayMode,
         local_only: bool = False,
     ) -> None:
         """
@@ -1208,7 +1209,7 @@ class DataShuttle:
         Parameters
         ----------
 
-        display_mode : Literal["error", "warn"]
+        display_mode : DisplayMode
             If "error", an exception is raised if validation fails. Otherwise,
             warnings are shown.
 
