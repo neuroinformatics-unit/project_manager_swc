@@ -53,6 +53,20 @@ from datashuttle.utils.decorators import (  # noqa
     requires_ssh_configs,
 )
 
+# TODO
+# ----
+# move function
+# add print as an output option
+# add new stream to get all validation errors separated by \n
+# add tests
+# add docs
+
+# on another PR
+# improve validation - there are a few missed cases
+# add validation to TUI
+
+# Then just the docs rewrite!
+
 
 # TODO: add 'print' option
 def quick_validate_project(
@@ -62,7 +76,7 @@ def quick_validate_project(
     name_templates: Optional[dict] = None,
 ):
     """ """
-    # TODO: seearch for top level folders and raise if not exist
+    # TODO: search for top level folders and raise if not exist
     # assert rawdata or derivatives here
     rawdata_and_derivatives = ["rawdata", "derivatives"]
     project_path = Path(project_path)
