@@ -53,6 +53,63 @@ from datashuttle.utils.decorators import (  # noqa
     requires_ssh_configs,
 )
 
+
+# TODO: add 'print' option
+def quick_validate_project(
+    project_path: str | Path,
+    top_level_folder: Optional[Literal["rawdata", "derivatives"]] = None,
+    error_or_warn: Literal["error", "warn"] = "warn",
+    name_templates: Optional[dict] = None,
+):
+    """ """
+    # TODO: seearch for top level folders and raise if not exist
+    # assert rawdata or derivatives here
+    rawdata_and_derivatives = ["rawdata", "derivatives"]
+    project_path = Path(project_path)
+
+    if not project_path.is_dir():
+        raise FileNotFoundError(
+            f"No file or folder found at `project_path`: {project_path}"
+        )
+
+    if (
+        not (project_path / "rawdata").is_dir()
+        or not (project_path / "derivatives").is_dir()
+    ):
+        raise FileNotFoundError(
+            "`project_path` must contain a 'rawdata' or 'derivatives' folder."
+        )
+
+    if top_level_folder is None:
+        top_level_folders_to_validate = rawdata_and_derivatives
+    else:
+        if top_level_folder not in rawdata_and_derivatives:
+            raise ValueError(
+                f"`top_level_folder must be one of: {rawdata_and_derivatives}"
+            )
+        top_level_folders_to_validate = [top_level_folder]
+
+    placeholder_configs = {
+        key: None for key in canonical_configs.get_canonical_configs().keys()
+    }
+    placeholder_configs["local_path"] = Path(project_path)  # type: ignore
+
+    cfg = Configs(
+        project_name=project_path.name,
+        file_path=None,  # type: ignore
+        input_dict=placeholder_configs,
+    )
+
+    for folder in top_level_folders_to_validate:
+        validation.validate_project(
+            cfg=cfg,
+            top_level_folder=folder,  # type: ignore
+            local_only=True,
+            error_or_warn=error_or_warn,
+            name_templates=name_templates,
+        )
+
+
 # -----------------------------------------------------------------------------
 # Project Manager Class
 # -----------------------------------------------------------------------------
