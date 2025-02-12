@@ -345,7 +345,7 @@ def raise_display_mode(
             utils.print_message_to_user(message)
     else:
         raise ValueError(
-            "`display_mode` must be either 'error', 'warn', 'print'."
+            "`display_mode` must be either 'error', 'warn' or 'print'."
         )
 
 
