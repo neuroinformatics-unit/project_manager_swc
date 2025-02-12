@@ -3,11 +3,8 @@
 API Reference
 -----------------
 
-.. currentmodule:: datashuttle.datashuttle_class
+.. currentmodule:: datashuttle
 
 .. autoclass:: DataShuttle
 
-.. automodule:: datashuttle.datashuttle_functions
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autofunction:: quick_validate_project
