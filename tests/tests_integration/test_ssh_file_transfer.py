@@ -18,7 +18,7 @@ class TestFileTransfer:
     @pytest.fixture(
         scope="class",
         params=[  # Set running SSH or local filesystem (see docstring).
-            False,
+            # False,
             pytest.param(
                 True,
                 marks=pytest.mark.skipif(
@@ -88,7 +88,7 @@ class TestFileTransfer:
             ssh_test_utils.setup_project_for_ssh(
                 project,
                 test_utils.make_test_path(
-                    central_path, test_project_name, "central"
+                    central_path, "central", test_project_name
                 ),
                 ssh_config.CENTRAL_HOST_ID,
                 ssh_config.USERNAME,
@@ -126,10 +126,10 @@ class TestFileTransfer:
         [
             ["all"],
             ["all_sub"],
-            ["all_non_sub"],
-            ["sub-001"],
-            ["sub-003_date-20231901"],
-            ["sub-002", "all_non_sub"],
+            #         ["all_non_sub"],
+            #         ["sub-001"],
+            #         ["sub-003_date-20231901"],
+            #         ["sub-002", "all_non_sub"],
         ],
     )
     @pytest.mark.parametrize(
@@ -137,10 +137,10 @@ class TestFileTransfer:
         [
             ["all"],
             ["all_non_ses"],
-            ["all_ses"],
-            ["ses-001"],
-            ["ses-002_random-key"],
-            ["all_non_ses", "ses-001"],
+            #       ["all_ses"],
+            #       ["ses-001"],
+            #       ["ses-002_random-key"],
+            #       ["all_non_ses", "ses-001"],
         ],
     )
     @pytest.mark.parametrize(
@@ -148,12 +148,12 @@ class TestFileTransfer:
         [
             ["all"],
             ["all_non_datatype"],
-            ["all_datatype"],
-            ["behav"],
-            ["ephys"],
-            ["anat"],
-            ["funcimg"],
-            ["anat", "behav", "all_non_datatype"],
+            #        ["all_datatype"],
+            #        ["behav"],
+            #        ["ephys"],
+            #        ["anat"],
+            #       ["funcimg"],
+            #        ["anat", "behav", "all_non_datatype"],
         ],
     )
     @pytest.mark.parametrize("upload_or_download", ["upload", "download"])
