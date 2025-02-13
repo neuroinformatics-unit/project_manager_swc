@@ -30,7 +30,7 @@ a python warning for all detected issues, while `"print"`
 will print directly to console.
 
 By default, both `"rawdata"` and `"derivatives"` folders will
-be checked (assuming they exist). Otherwise, one can be specified[pyproject.toml](..%2F..%2F..%2F..%2Fpyproject.toml)
+be checked (assuming they exist). Otherwise, one can be specified
 with the a `top_level_folder` argument.
 
 See [](datashuttle.quick_validate_project)  for a full list
