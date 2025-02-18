@@ -19,6 +19,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from datashuttle.utils.custom_types import (
+        DisplayMode,
         OverwriteExistingFiles,
         Prefix,
         TopLevelFolder,
@@ -312,7 +313,7 @@ class DataShuttle:
                 format_sub,
                 format_ses,
                 local_only=True,
-                error_or_warn="error",
+                display_mode="error",
                 log=log,
                 name_templates=name_templates,
             )
@@ -1191,29 +1192,23 @@ class DataShuttle:
     def validate_project(
         self,
         top_level_folder: TopLevelFolder,
-        error_or_warn: Literal["error", "warn"],
+        display_mode: DisplayMode,
         local_only: bool = False,
     ) -> None:
         """
         Perform validation on the project. This checks the subject
-        and session level folders to ensure that:
-            - the digit lengths are consistent (e.g. 'sub-001'
-              with 'sub-02' is not allowed)
-            - 'sub-' or 'ses-' is the first key of the sub / ses names
-            - names online include integers, letters, dash or underscore
-            - names are checked against name templates (if set)
-            - no duplicate names exist across the project
-              (e.g. 'sub-001' and 'sub-001_date-1010120').
+        and session level folders to ensure there are not
+        NeuroBlueprint formatting issues.
 
         Parameters
         ----------
 
-        error_or_warn : Literal["error", "warn"]
-            If "error", an exception is raised if validation fails. Otherwise,
-            warnings are shown.
+        display_mode : DisplayMode
+            The validation issues are displayed as ``"error"`` (raise error)
+            ``"warn"`` (show warning) or ``"print"``.
 
         local_only : bool
-            If `True`, only the local project is validated. Otherwise, both
+            If ``True``, only the local project is validated. Otherwise, both
             local and central projects are validated.
         """
         self._start_log(
@@ -1227,7 +1222,7 @@ class DataShuttle:
             self.cfg,
             top_level_folder,
             local_only=local_only,
-            error_or_warn=error_or_warn,
+            display_mode=display_mode,
             name_templates=name_templates,
         )
 

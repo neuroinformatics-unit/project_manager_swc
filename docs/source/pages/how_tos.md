@@ -22,6 +22,14 @@ How to install **datashuttle**
 Choose the best terminal to run the graphical interface.
 :::
 
+:::{grid-item-card} {fas}`desktop;sd-text-primary` Validate Existing Project
+:link: how_tos/quick-validate-project
+:link-type: doc
+
+Quickly validate a NeuroBlueprint project
+
+:::
+
 :::{grid-item-card} {fas}`desktop;sd-text-primary` Make a New Project
 :link: how_tos/make-a-new-project
 :link-type: doc
@@ -80,6 +88,7 @@ A handy feature for template subject and session names.
 how_tos/choose-a-terminal
 how_tos/create-folders
 how_tos/install
+how_tos/quick-validate-project
 how_tos/make-a-new-project
 how_tos/transfer-data
 how_tos/read-logs
