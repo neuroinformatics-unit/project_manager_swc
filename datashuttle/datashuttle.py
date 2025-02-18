@@ -967,7 +967,7 @@ class DataShuttle:
         self._set_attributes_after_config_load()
 
         # This is just a placeholder rclone config that will suffice
-        # if ever central is a 'local filesystem'.
+        # if central is a 'local filesystem'.
         self._setup_rclone_central_local_filesystem_config()
 
         utils.log_and_message(
@@ -1495,6 +1495,14 @@ class DataShuttle:
         for key in ["overwrite_existing_files", "dry_run"]:
             if key not in settings["tui"]:
                 settings["tui"][key] = canonical_tui_configs["tui"][key]
+
+        # Handle conversion to 'narrow datatype' v0.6.0
+        if not isinstance(
+            settings["tui"]["create_checkboxes_on"]["behav"], dict
+        ):
+            canonical_configs.in_place_update_settings_for_narrow_datatype(
+                settings
+            )
 
     def _check_top_level_folder(self, top_level_folder):
         """
