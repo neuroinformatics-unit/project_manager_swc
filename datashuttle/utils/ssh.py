@@ -244,6 +244,7 @@ def search_ssh_central_for_folders(
     search_prefix: str,
     cfg: Configs,
     verbose: bool = True,
+    return_full_path: bool = False,
 ) -> Tuple[List[Any], List[Any]]:
     """
     Search for the search prefix in the search path over SSH.
@@ -274,6 +275,7 @@ def search_ssh_central_for_folders(
             search_path,
             search_prefix,
             verbose,
+            return_full_path,
         )
 
     return all_folder_names, all_filenames
@@ -284,6 +286,7 @@ def get_list_of_folder_names_over_sftp(
     search_path: Path,
     search_prefix: str,
     verbose: bool = True,
+    return_full_path: bool = False,
 ) -> Tuple[List[Any], List[Any]]:
     """
     Use paramiko's sftp to search a path
@@ -307,13 +310,19 @@ def get_list_of_folder_names_over_sftp(
     all_filenames = []
     try:
         for file_or_folder in sftp.listdir_attr(search_path.as_posix()):
+
             if file_or_folder.st_mode is not None and fnmatch.fnmatch(
                 file_or_folder.filename, search_prefix
             ):
+                to_append = (
+                    search_path / file_or_folder.filename
+                    if return_full_path
+                    else file_or_folder.filename
+                )
                 if stat.S_ISDIR(file_or_folder.st_mode):
-                    all_folder_names.append(file_or_folder.filename)
+                    all_folder_names.append(to_append)
                 else:
-                    all_filenames.append(file_or_folder.filename)
+                    all_filenames.append(to_append)
 
     except FileNotFoundError:
         if verbose:

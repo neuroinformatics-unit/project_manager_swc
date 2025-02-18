@@ -20,14 +20,14 @@ from types import SimpleNamespace
 import pytest
 import test_utils
 
-test_ssh = False
+test_ssh = True
 username = "jziminski"
-central_host_id = "hpc-gw1.hpc.swc.ucl.ac.uk"
+central_host_id = "ssh.swc.ucl.ac.uk"
 server_path = r"/ceph/neuroinformatics/neuroinformatics/scratch/datashuttle_tests/fake_data"
 
 
 if platform.system() == "Windows":
-    ssh_key_path = r"C:\Users\User\.datashuttle\test_file_conflicts_ssh_key"
+    ssh_key_path = r"C:\Users\Joe\.datashuttle\test_file_conflicts_ssh_key"
     filesystem_path = "X:/neuroinformatics/scratch/datashuttle_tests/fake_data"
 
 else:

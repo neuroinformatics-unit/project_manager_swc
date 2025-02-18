@@ -525,12 +525,18 @@ def swap_local_and_central_paths(project, swap_last_folder_only=False):
     os.makedirs(central_path, exist_ok=True)
 
     if swap_last_folder_only:
-        new_local_path = local_path.parent / central_path.name
+        new_local_path = (
+            local_path.parent.parent
+            / central_path.parent.name
+            / central_path.name
+        )
         os.makedirs(new_local_path, exist_ok=True)
 
         project.update_config_file(local_path=new_local_path)
         project.update_config_file(
-            central_path=central_path.parent / local_path.name
+            central_path=central_path.parent.parent
+            / local_path.parent.name
+            / local_path.name
         )
     else:
         os.makedirs(local_path, exist_ok=True)

@@ -3,6 +3,8 @@
 API Reference
 -----------------
 
-.. currentmodule:: datashuttle.datashuttle
+.. currentmodule:: datashuttle
 
 .. autoclass:: DataShuttle
+
+.. autofunction:: quick_validate_project
