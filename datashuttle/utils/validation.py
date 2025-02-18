@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 from itertools import chain
 from pathlib import Path
+
 from datashuttle.configs import canonical_folders
 from datashuttle.utils import formatting, getters, utils
 from datashuttle.utils.custom_exceptions import NeuroBlueprintError
@@ -69,17 +70,23 @@ def validate_list_of_names(
         lambda: names_include_special_characters(path_or_name_list),
         lambda: dashes_and_underscore_alternate_incorrectly(path_or_name_list),
         lambda: value_lengths_are_inconsistent(path_or_name_list, prefix),
-        lambda: names_dont_match_templates(path_or_name_list, prefix, name_templates),
+        lambda: names_dont_match_templates(
+            path_or_name_list, prefix, name_templates
+        ),
     ]
     if check_duplicates:
-        tests_to_run += [lambda: duplicated_prefix_values(path_or_name_list, prefix)]
+        tests_to_run += [
+            lambda: duplicated_prefix_values(path_or_name_list, prefix)
+        ]
 
     for test in tests_to_run:
 
         error_messages = test()
 
         for message in error_messages:
-            raise_display_mode(message, display_mode, log)  # check logging here, will log error per file?
+            raise_display_mode(
+                message, display_mode, log
+            )  # check logging here, will log error per file?
 
 
 def names_dont_match_templates(
@@ -122,8 +129,7 @@ def names_dont_match_templates(
 
 
 def get_path_and_name(path_or_name) -> Tuple[Optional[Path], str]:
-    """
-    """
+    """ """
     if isinstance(path_or_name, Path):
         return path_or_name, path_or_name.name
     else:
@@ -193,7 +199,7 @@ def name_begins_with_bad_key(
 
 
 def names_include_special_characters(
-    path_or_names_list: List[Path] | List[str]
+    path_or_names_list: List[Path] | List[str],
 ) -> List[str]:
     """
     Check that a list of NeuroBlueprint formatted
@@ -210,16 +216,17 @@ def names_include_special_characters(
 
         if name_has_special_character(name):
             error_messages.append(
-            f"The name: {name}, contains characters which are not alphanumeric, dash or underscore. Path: {path_}",
+                f"The name: {name}, contains characters which are not alphanumeric, dash or underscore. Path: {path_}",
             )
     return error_messages
+
 
 def name_has_special_character(name: str) -> bool:
     return not re.match("^[A-Za-z0-9_-]*$", name)
 
 
 def dashes_and_underscore_alternate_incorrectly(
-    path_or_names_list: List[Path] | List[str]
+    path_or_names_list: List[Path] | List[str],
 ) -> List[str]:
     """
     Check a list of NeuroBlueprint formatted names
@@ -272,7 +279,10 @@ def value_lengths_are_inconsistent(
     with a message detailing the error.
     """
     # TODO: this is all getting insane...
-    names_list = [path_or_name if isinstance(path_or_name, str) else path_or_name.name for path_or_name in path_or_names_list]
+    names_list = [
+        path_or_name if isinstance(path_or_name, str) else path_or_name.name
+        for path_or_name in path_or_names_list
+    ]
 
     prefix_values = utils.get_values_from_bids_formatted_name(
         names_list, prefix, return_as_int=False
@@ -407,7 +417,10 @@ def validate_project(
     # but need to do with SSH too. can embed somewhere...?
 
     folder_names = getters.get_all_sub_and_ses_names(  # could extend massively, also getting datatype as well as non-NB folders...
-        cfg, top_level_folder, local_only, return_full_path=True,
+        cfg,
+        top_level_folder,
+        local_only,
+        return_full_path=True,
     )
 
     # Check subjects
@@ -422,9 +435,10 @@ def validate_project(
         name_templates=name_templates,
     )
 
-
     for sub_path in all_sub_paths:
-        error_messages = new_name_duplicates_existing(sub_path.name, all_sub_paths, "sub")
+        error_messages = new_name_duplicates_existing(
+            sub_path.name, all_sub_paths, "sub"
+        )
         for message in error_messages:
             raise_display_mode(message, display_mode, log)
 
@@ -440,10 +454,12 @@ def validate_project(
     )
 
     # TODO: explain this! for each name, find all duplicates! (might be multiple...)
-    for ses_paths in folder_names["ses"].values():  # TODO: what is difference from above?
+    for ses_paths in folder_names[
+        "ses"
+    ].values():  # TODO: what is difference from above?
         for path_ in ses_paths:
             error_messages = new_name_duplicates_existing(
-                path_, ses_paths, "ses"
+                path_.name, ses_paths, "ses"
             )
             for message in error_messages:
                 raise_display_mode(message, display_mode, log)
@@ -519,6 +535,7 @@ def validate_names_against_project(
     folder_names = getters.get_all_sub_and_ses_names(
         cfg, top_level_folder, local_only, return_full_path=True
     )
+    breakpoint()
 
     # Check subjects
     if folder_names["sub"]:
@@ -530,7 +547,9 @@ def validate_names_against_project(
             name_templates=name_templates,
         )
 
-        valid_sub_in_project = strip_invalid_names(folder_names["sub"], "sub")  # TODO: need to do some work here...?
+        valid_sub_in_project = strip_invalid_names(
+            folder_names["sub"], "sub"
+        )  # TODO: need to do some work here...?
 
         check_sub_names_value_length_are_consistent_with_project(
             sub_names, valid_sub_in_project, display_mode, log
@@ -562,7 +581,7 @@ def validate_names_against_project(
                 valid_ses_in_sub = strip_invalid_names(
                     folder_names["ses"][new_sub], "ses"
                 )
-
+                breakpoint()
                 check_ses_names_value_length_are_consistent_with_project(
                     ses_names, valid_ses_in_sub, new_sub, display_mode, log
                 )
@@ -635,8 +654,9 @@ def check_ses_names_value_length_are_consistent_with_project(
             raise_display_mode(error_message[0], display_mode, log)
 
 
-
-def strip_invalid_names(path_or_names_list: List[Path] | List[str], prefix: Prefix) -> List[Path] | List[str]:
+def strip_invalid_names(
+    path_or_names_list: List[Path] | List[str], prefix: Prefix
+) -> List[Path] | List[str]:
     """ """
     new_list = []
     for path_or_name in path_or_names_list:
@@ -692,7 +712,7 @@ def new_name_duplicates_existing(
             if new_name != exist_name:
                 error_messages.append(
                     f"The prefix for {new_name} duplicates the name : {exist_name} at path: {exist_path}"
-            )
+                )
     return error_messages
 
 

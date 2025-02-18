@@ -242,7 +242,10 @@ class TestValidation(BaseTest):
         for bad_sub_name in ["sub-001_@DATE@", "sub-001_extra-key"]:
             with pytest.raises(NeuroBlueprintError) as e:
                 project.create_folders("rawdata", bad_sub_name, "ses-001")
-            assert "A sub already exists" in str(e.value)
+            try:
+                assert "A sub already exists" in str(e.value)
+            except:
+                breakpoint()
 
         project.create_folders("rawdata", "sub-001", "ses-001")
 
@@ -334,10 +337,13 @@ class TestValidation(BaseTest):
                 "rawdata", display_mode="error", local_only=False
             )
 
-        assert (
-            "A sub already exists with the same sub id as sub-002_id-11"
-            in str(e.value)
-        )
+        try:
+            assert (
+                "A sub already exists with the same sub id as sub-002_id-11"
+                in str(e.value)
+            )
+        except:
+            breakpoint()
 
         # Now check warnings are shown when there are multiple validation
         # issues across local and central.
@@ -418,10 +424,13 @@ class TestValidation(BaseTest):
                 project.cfg, "rawdata", ["sab-001"], local_only=True
             )
 
-        assert (
-            str(e.value)
-            == "The name: sab-001 do not begin with the required prefix: sub"
-        )
+        try:
+            assert (
+                str(e.value)
+                == "The name: sab-001 do not begin with the required prefix: sub"
+            )
+        except:
+            breakpoint()
 
         # Now check the bad names don't interfere with
         # inconsistent value lengths or duplicate names.
@@ -537,10 +546,13 @@ class TestValidation(BaseTest):
                 local_only=True,
                 display_mode="error",
             )
-        assert (
-            "same sub id as sub-1_id-11. "
-            "The existing folder is sub-1_id-abc." in str(e.value)
-        )
+        try:
+            assert (
+                "same sub id as sub-1_id-11. "
+                "The existing folder is sub-1_id-abc." in str(e.value)
+            )
+        except:
+            breakpoint()
 
         # Now check multiple different types of error are warned about
         sub_names = ["sub-002", "sub-1_id-11", "sub-3_id-c", "sub-4"]
