@@ -765,3 +765,66 @@ class TestValidation(BaseTest):
             str(e.value)
             == "`project_path` must contain a 'rawdata' or 'derivatives' folder."
         )
+
+    # ----------------------------------------------------------------------------------
+    # Test Strict Validation
+    # ----------------------------------------------------------------------------------
+
+    @pytest.mark.parametrize("top_level_folder", ["rawdata", "derivatives"])
+    def test_strict_mode_validation(self, project, top_level_folder):
+        """ """
+        project.create_folders(
+            top_level_folder,
+            ["sub-001", "sub-002"],
+            ["ses-001", "ses-002"],
+            ["ephys", "behav"],
+        )
+
+        project.validate_project(
+            top_level_folder, "error", local_only=True, strict_mode=True
+        )
+
+        os.makedirs(
+            project.cfg["local_path"] / top_level_folder / "bad_sub_name"
+        )
+        os.makedirs(
+            project.cfg["local_path"]
+            / top_level_folder
+            / "sub-001"
+            / "bad_sesname"
+        )
+        os.makedirs(
+            project.cfg["local_path"]
+            / top_level_folder
+            / "sub-002"
+            / "ses-002"
+            / "bad_datatype_name"
+        )
+
+        with pytest.warns(UserWarning) as w:
+            project.validate_project(
+                top_level_folder, "warn", local_only=True, strict_mode=True
+            )
+
+        assert "bad_sub_name is not a 'sub-' prefixed name" in str(
+            w[0].message
+        )
+        assert (
+            "bad_sesname (for sub-001) is not a 'ses-' prefixed name"
+            in str(w[1].message)
+        )
+        assert (
+            "bad_datatype_name found at the datatype level is not a valid datatype"
+            in str(w[2].message)
+        )
+        assert len(w) == 3
+
+        with pytest.raises(ValueError) as e:
+            project.validate_project(
+                top_level_folder, "warn", local_only=False, strict_mode=True
+            )
+
+        assert (
+            str(e.value)
+            == "`strict_mode` is currently only available for `local_only=True`."
+        )

@@ -314,8 +314,15 @@ def get_all_sub_and_ses_names(
         If `True, only get names from `local_path`, otherwise from
         `local_path` and `central_path`.
     """
-    sub_folder_names = folders.search_project_for_sub_or_ses_names(
-        cfg, top_level_folder, None, "sub-*", local_only, return_full_path=True
+    sub_folder_names = (
+        folders.search_project_for_sub_or_ses_names(  # TODO: RENAME
+            cfg,
+            top_level_folder,
+            None,
+            "sub-*",
+            local_only,
+            return_full_path=True,
+        )
     )
 
     if local_only:

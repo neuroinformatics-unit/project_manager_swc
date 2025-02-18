@@ -15,7 +15,7 @@ from datetime import datetime
 from itertools import chain
 from pathlib import Path
 
-from datashuttle.configs import canonical_folders
+from datashuttle.configs import canonical_configs, canonical_folders
 from datashuttle.utils import formatting, getters, utils
 from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 
@@ -411,6 +411,7 @@ def validate_project(
     display_mode: DisplayMode = "error",
     log: bool = True,
     name_templates: Optional[Dict] = None,
+    strict_mode: bool = False,
 ) -> None:
     """
     Validate all subject and session folders within a project.
@@ -443,16 +444,12 @@ def validate_project(
     log : bool
         If `True`, errors or warnings are logged to "datashuttle" logger.
     """
-
-    # Test general structure
-    # if nb_folders_only...
-    #    here look for sub-level only
-    # for every sub look ses level only
-    # for every ses look datatype level only
-    # but need to do with SSH too. can embed somewhere...?
     check_high_level_project_structure(cfg, local_only, display_mode, log)
 
-    folder_names = getters.get_all_sub_and_ses_names(  # could extend massively, also getting datatype as well as non-NB folders...
+    if strict_mode:
+        check_strict_mode(cfg, top_level_folder, local_only, display_mode, log)
+
+    folder_names = getters.get_all_sub_and_ses_names(
         cfg,
         top_level_folder,
         local_only,
@@ -650,10 +647,9 @@ def check_high_level_project_structure(cfg, local_only, display_mode, log):
 
     if (
         not (cfg["local_path"] / "rawdata").is_dir()
-        or not (cfg["local_path"] / "derivatives").is_dir()
+        and not (cfg["local_path"] / "derivatives").is_dir()
     ):
         message = f"The local project must contain a 'rawdata' or 'derivatives' folder. Path: {cfg['local_path']}"
-
         raise_display_mode(message, display_mode, log)
 
     if local_only:
@@ -678,6 +674,80 @@ def check_high_level_project_structure(cfg, local_only, display_mode, log):
         message = f"The central project must contain a 'rawdata' or 'derivatives' folder. Path: {cfg['central_path']}"
 
         raise_display_mode(message, display_mode, log)
+
+
+def check_strict_mode(cfg, top_level_folder, local_only, display_mode, log):
+    """ """
+    if not local_only:
+        raise ValueError(
+            "`strict_mode` is currently only available for `local_only=True`."
+        )
+    # TODO: temporary workaround for circular imports
+    from datashuttle.utils import folders
+
+    sub_level_folder_paths = folders.search_project_for_sub_or_ses_names(
+        cfg,
+        top_level_folder,
+        None,
+        "*",
+        local_only=True,
+        return_full_path=True,
+    )
+
+    for sub_level_path in sub_level_folder_paths["local"]:
+
+        sub_level_name = sub_level_path.name
+
+        if sub_level_name[:4] != "sub-":
+            raise_display_mode(
+                f"{sub_level_name} is not a 'sub-' prefixed name. Path: {sub_level_path}",
+                display_mode,
+                log,
+            )
+            continue
+
+        ses_level_folder_paths = folders.search_project_for_sub_or_ses_names(
+            cfg,
+            top_level_folder,
+            sub_level_name,
+            "*",
+            local_only=True,
+            return_full_path=True,
+        )
+
+        for ses_level_path in ses_level_folder_paths["local"]:
+
+            ses_level_name = ses_level_path.name
+
+            if ses_level_name[:4] != "ses-":
+                raise_display_mode(
+                    f"{ses_level_name} (for {sub_level_name}) is not a 'ses-' prefixed name. Path: {ses_level_path}",
+                    display_mode,
+                    log,
+                )
+
+            base_folder = cfg.get_base_folder("local", top_level_folder)
+
+            search_results = folders.search_sub_or_ses_level(
+                cfg,
+                base_folder,
+                "local",
+                sub_level_name,
+                ses_level_name,
+                return_full_path=True,
+            )[0]
+
+            canonical_datatypes = canonical_configs.get_datatypes()
+            for datatype_level_path in search_results:
+
+                datatype_level_name = datatype_level_path.name
+
+                if datatype_level_name not in canonical_datatypes:
+                    raise_display_mode(
+                        f"{datatype_level_name} found at the datatype level is not a valid datatype. Path: {datatype_level_path}",
+                        display_mode,
+                        log,
+                    )
 
 
 def check_sub_names_value_length_are_consistent_with_project(
