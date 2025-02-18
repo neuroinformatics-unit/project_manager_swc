@@ -295,7 +295,6 @@ def get_all_sub_and_ses_names(
     cfg: Configs,
     top_level_folder: TopLevelFolder,
     local_only: bool,
-    return_full_path: bool = False,
 ) -> Dict:
     """
     Get a list of every subject and session name in the
@@ -316,7 +315,7 @@ def get_all_sub_and_ses_names(
         `local_path` and `central_path`.
     """
     sub_folder_names = folders.search_project_for_sub_or_ses_names(
-        cfg, top_level_folder, None, "sub-*", local_only, return_full_path
+        cfg, top_level_folder, None, "sub-*", local_only, return_full_path=True
     )
 
     if local_only:
@@ -327,9 +326,17 @@ def get_all_sub_and_ses_names(
         )
 
     all_ses_folder_names = {}
-    for sub in all_sub_folder_names:
+    for sub_path in all_sub_folder_names:
+
+        sub = sub_path.name
+
         ses_folder_names = folders.search_project_for_sub_or_ses_names(
-            cfg, top_level_folder, sub, "ses-*", local_only, return_full_path
+            cfg,
+            top_level_folder,
+            sub,
+            "ses-*",
+            local_only,
+            return_full_path=True,
         )
 
         if local_only:

@@ -420,7 +420,6 @@ def validate_project(
         cfg,
         top_level_folder,
         local_only,
-        return_full_path=True,
     )
 
     # Check subjects
@@ -533,9 +532,8 @@ def validate_names_against_project(
     list under different circumstances. See issue #355
     """
     folder_names = getters.get_all_sub_and_ses_names(
-        cfg, top_level_folder, local_only, return_full_path=True
+        cfg, top_level_folder, local_only
     )
-    breakpoint()
 
     # Check subjects
     if folder_names["sub"]:
@@ -581,16 +579,15 @@ def validate_names_against_project(
                 valid_ses_in_sub = strip_invalid_names(
                     folder_names["ses"][new_sub], "ses"
                 )
-                breakpoint()
                 check_ses_names_value_length_are_consistent_with_project(
                     ses_names, valid_ses_in_sub, new_sub, display_mode, log
                 )
 
                 for new_ses in ses_names:
-                    failed, message = new_name_duplicates_existing(
+                    error_messages = new_name_duplicates_existing(
                         new_ses, valid_ses_in_sub, "ses"
                     )
-                    if failed:
+                    for message in error_messages:
                         raise_display_mode(message, display_mode, log)
 
 
@@ -638,7 +635,7 @@ def check_ses_names_value_length_are_consistent_with_project(
     this performs the same function for session. Potential to merge
     with that function, just some minor annoying differences.
     """
-    if value_lengths_are_inconsistent(valid_ses_in_sub, "ses")[0]:
+    if any(value_lengths_are_inconsistent(valid_ses_in_sub, "ses")):
         raise_display_mode(
             f"Cannot check names for inconsistent value lengths "
             f"because the session value lengths for subject "
