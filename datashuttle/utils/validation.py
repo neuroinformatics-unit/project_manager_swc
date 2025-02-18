@@ -425,6 +425,9 @@ def validate_project(
     # Check subjects
     all_sub_paths = folder_names["sub"]
 
+    all_sub_paths = strip_invalid_names(
+        all_sub_paths, "sub", display_mode, log
+    )
     validate_list_of_names(
         all_sub_paths,
         prefix="sub",
@@ -444,6 +447,10 @@ def validate_project(
     # Check sessions
     all_ses_paths = list(chain(*folder_names["ses"].values()))
 
+    all_ses_paths = strip_invalid_names(
+        all_ses_paths, "ses", display_mode, log
+    )
+
     validate_list_of_names(
         all_ses_paths,
         "ses",
@@ -453,9 +460,7 @@ def validate_project(
     )
 
     # TODO: explain this! for each name, find all duplicates! (might be multiple...)
-    for ses_paths in folder_names[
-        "ses"
-    ].values():  # TODO: what is difference from above?
+    for ses_paths in folder_names["ses"].values():
         for path_ in ses_paths:
             error_messages = new_name_duplicates_existing(
                 path_.name, ses_paths, "ses"
@@ -537,6 +542,11 @@ def validate_names_against_project(
 
     # Check subjects
     if folder_names["sub"]:
+
+        valid_sub_in_project = strip_invalid_names(
+            folder_names["sub"], "sub", display_mode, log
+        )
+
         validate_list_of_names(
             sub_names,
             prefix="sub",
@@ -544,10 +554,6 @@ def validate_names_against_project(
             display_mode=display_mode,
             name_templates=name_templates,
         )
-
-        valid_sub_in_project = strip_invalid_names(
-            folder_names["sub"], "sub"
-        )  # TODO: need to do some work here...?
 
         check_sub_names_value_length_are_consistent_with_project(
             sub_names, valid_sub_in_project, display_mode, log
@@ -577,7 +583,7 @@ def validate_names_against_project(
             if new_sub in folder_names["ses"]:
 
                 valid_ses_in_sub = strip_invalid_names(
-                    folder_names["ses"][new_sub], "ses"
+                    folder_names["ses"][new_sub], "ses", display_mode, log
                 )
                 check_ses_names_value_length_are_consistent_with_project(
                     ses_names, valid_ses_in_sub, new_sub, display_mode, log
@@ -652,7 +658,10 @@ def check_ses_names_value_length_are_consistent_with_project(
 
 
 def strip_invalid_names(
-    path_or_names_list: List[Path] | List[str], prefix: Prefix
+    path_or_names_list: List[Path] | List[str],
+    prefix: Prefix,
+    display_mode,
+    log,
 ) -> List[Path] | List[str]:
     """ """
     new_list = []
@@ -665,7 +674,10 @@ def strip_invalid_names(
                 [name], prefix, return_as_int=True
             )[0]
         except NeuroBlueprintError:
+            message = f"Invalid name: {name}. Path: {path_}"
+            raise_display_mode(message, display_mode, log)
             continue
+
         if path_:
             new_list.append(path_)
         else:
