@@ -20,6 +20,72 @@ from datashuttle.utils import formatting, getters, utils
 from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 
 # -----------------------------------------------------------------------------
+# Formatted Error Messages
+# -----------------------------------------------------------------------------
+
+
+def get_name_error(name, prefix, path_):
+    return handle_path(
+        f"BAD_NAME: The name: {name} of type: {prefix} is not valid.", path_
+    )
+
+
+def get_special_char_error(name, path_):
+    return handle_path(
+        f"SPECIAL_CHAR: The name: {name}, contains characters which are not alphanumeric, dash or underscore.",
+        path_,
+    )
+
+
+def get_name_format_error(name, path_):
+    return handle_path(
+        f"NAME_FORMAT: The name {name} does not consist of key-value pairs separated by underscores.",
+        path_,
+    )
+
+
+def get_value_length_error(prefix):
+    return f"VALUE_LENGTH: Inconsistent value lengths for the prefix: {prefix} were found in the project."
+
+
+def get_datetime_error(key, name, strfmt, path_):
+    return handle_path(
+        f"DATETIME: Name {name} contains an invalid {key}. It should be ISO format: {strfmt}.",
+        path_,
+    )
+
+
+def get_template_error(name, regexp, path_):
+    return handle_path(
+        f"TEMPLATE: The name: {name} does not match the template: {regexp}.",
+        path_,
+    )
+
+
+def get_missing_top_level_folder_error(path_):
+    return handle_path(
+        "The local project must contain a 'rawdata' or 'derivatives' folder.",
+        path_,
+    )
+
+
+def get_duplicate_name_error(new_name, exist_name, exist_path):
+    return f"DUPLICATE_NAME: The prefix for {new_name} duplicates the name : {exist_name} at path: {exist_path}"
+
+
+def get_datatype_error(datatype_name, path_):
+    return handle_path(
+        f"DATATYPE: {datatype_name} is not a valid datatype name.", path_
+    )
+
+
+def handle_path(message, path_):
+    if path_:
+        message += f" Path: {path_}"
+    return message
+
+
+# -----------------------------------------------------------------------------
 # Checking a standalone list of names
 # -----------------------------------------------------------------------------
 
@@ -81,6 +147,8 @@ def validate_list_of_names(
             lambda: duplicated_prefix_values(path_or_name_list, prefix)
         ]
 
+    all_error_messages = []
+
     for test in tests_to_run:
 
         error_messages = test()
@@ -89,6 +157,10 @@ def validate_list_of_names(
             raise_display_mode(
                 message, display_mode, log
             )  # check logging here, will log error per file?
+
+        all_error_messages += error_messages
+
+    return all_error_messages
 
 
 def names_dont_match_templates(
@@ -122,9 +194,7 @@ def names_dont_match_templates(
         path_, name = get_path_and_name(path_or_name)
 
         if not re.fullmatch(regexp, name):
-            message = f"The name: {name} does not match the template: {regexp}"
-            if path_:
-                message += "Path: {path_}"
+            message = get_template_error(name, regexp, path_)
             error_messages.append(message)
 
     return error_messages
@@ -193,9 +263,8 @@ def name_begins_with_bad_key(
         path_, name = get_path_and_name(path_or_name)
 
         if name[:4] != f"{prefix}-":
-            error_messages.append(
-                f"The folder {name} does not begin with the required prefix. Path: {path_}"
-            )
+            message = get_name_error(name, prefix, path_)
+            error_messages.append(message)
 
     return error_messages
 
@@ -217,9 +286,9 @@ def names_include_special_characters(
         path_, name = get_path_and_name(path_or_name)
 
         if name_has_special_character(name):
-            error_messages.append(
-                f"The name: {name}, contains characters which are not alphanumeric, dash or underscore. Path: {path_}",
-            )
+            message = get_special_char_error(name, path_)
+            error_messages.append(message)
+
     return error_messages
 
 
@@ -259,11 +328,8 @@ def dashes_and_underscore_alternate_incorrectly(
             or underscore_dash_not_interleaved
             or (name[-1] in discrim.keys())
         ):
-            error_messages.append(
-                f"Problem with name: {name}. Names "
-                f"must consist of key-value pairs separated by underscores."
-                f"e.g. 'sub-001_ses-01_date-20230516. Path: {path_}"
-            )
+            message = get_name_format_error(name, path_)
+            error_messages.append(message)
 
     return error_messages
 
@@ -298,11 +364,8 @@ def value_lengths_are_inconsistent(
 
     error_messages = []
     if inconsistent_value_len:
-        error_messages.append(
-            f"Inconsistent value lengths for the key {prefix} were "
-            f"found. Ensure the number of digits for the {prefix} value "
-            f"are the same and prefixed with leading zeros if required."
-        )
+        message = get_value_length_error(prefix)
+        error_messages.append(message)
     return error_messages
 
 
@@ -332,7 +395,7 @@ def datetime_are_iso_format(
         try:
             datetime.strptime(format_to_check, strfmt)
         except ValueError:
-            message = f"Name {name} contains an invalid {key}. It should be ISO format: {strfmt}. Path: {path_}"
+            message = get_datetime_error(key, name, strfmt, path_)
             error_messages.append(message)
 
     return error_messages
@@ -367,7 +430,9 @@ def duplicated_prefix_values(
     has_duplicate_ids = not utils.all_unique(int_values)
 
     error_message = []
-    if has_duplicate_ids:
+    if (
+        has_duplicate_ids
+    ):  # TOOD: this is an edge case that is only relevant for a passed list of names. Maybe we can remove this...
         error_message.append(
             f"{prefix} names must all have unique integer ids"
             f" after the {prefix} prefix."
@@ -412,7 +477,7 @@ def validate_project(
     log: bool = True,
     name_templates: Optional[Dict] = None,
     strict_mode: bool = False,
-) -> None:
+) -> List[str]:
     """
     Validate all subject and session folders within a project.
 
@@ -444,10 +509,16 @@ def validate_project(
     log : bool
         If `True`, errors or warnings are logged to "datashuttle" logger.
     """
-    check_high_level_project_structure(cfg, local_only, display_mode, log)
+    all_error_messages = []
+
+    all_error_messages += check_high_level_project_structure(
+        cfg, local_only, display_mode, log
+    )
 
     if strict_mode:
-        check_strict_mode(cfg, top_level_folder, local_only, display_mode, log)
+        all_error_messages += check_strict_mode(
+            cfg, top_level_folder, local_only, display_mode, log
+        )
 
     folder_names = getters.get_all_sub_and_ses_names(
         cfg,
@@ -458,10 +529,12 @@ def validate_project(
     # Check subjects
     all_sub_paths = folder_names["sub"]
 
-    all_sub_paths = strip_invalid_names(
+    all_sub_paths, error_messages = strip_invalid_names(
         all_sub_paths, "sub", display_mode, log
     )
-    validate_list_of_names(
+    all_error_messages += error_messages
+
+    all_error_messages += validate_list_of_names(
         all_sub_paths,
         prefix="sub",
         display_mode=display_mode,
@@ -476,15 +549,17 @@ def validate_project(
         )
         for message in error_messages:
             raise_display_mode(message, display_mode, log)
+        all_error_messages += error_messages
 
     # Check sessions
     all_ses_paths = list(chain(*folder_names["ses"].values()))
 
-    all_ses_paths = strip_invalid_names(
+    all_ses_paths, error_messages = strip_invalid_names(
         all_ses_paths, "ses", display_mode, log
     )
+    all_error_messages += error_messages
 
-    validate_list_of_names(
+    all_error_messages += validate_list_of_names(
         all_ses_paths,
         "ses",
         check_duplicates=False,
@@ -492,7 +567,6 @@ def validate_project(
         log=log,
     )
 
-    # TODO: explain this! for each name, find all duplicates! (might be multiple...)
     for ses_paths in folder_names["ses"].values():
         for path_ in ses_paths:
             error_messages = new_name_duplicates_existing(
@@ -500,6 +574,9 @@ def validate_project(
             )
             for message in error_messages:
                 raise_display_mode(message, display_mode, log)
+            all_error_messages += error_messages
+
+    return all_error_messages
 
 
 def validate_names_against_project(
@@ -577,7 +654,7 @@ def validate_names_against_project(
     # Check subjects
     if folder_names["sub"]:
 
-        valid_sub_in_project = strip_invalid_names(
+        valid_sub_in_project, _ = strip_invalid_names(
             folder_names["sub"], "sub", display_mode, log
         )
 
@@ -616,7 +693,7 @@ def validate_names_against_project(
         for new_sub in sub_names:
             if new_sub in folder_names["ses"]:
 
-                valid_ses_in_sub = strip_invalid_names(
+                valid_ses_in_sub, _ = strip_invalid_names(
                     folder_names["ses"][new_sub], "ses", display_mode, log
                 )
                 check_ses_names_value_length_are_consistent_with_project(
@@ -649,11 +726,12 @@ def check_high_level_project_structure(cfg, local_only, display_mode, log):
         not (cfg["local_path"] / "rawdata").is_dir()
         and not (cfg["local_path"] / "derivatives").is_dir()
     ):
-        message = f"The local project must contain a 'rawdata' or 'derivatives' folder. Path: {cfg['local_path']}"
+        message = get_missing_top_level_folder_error(cfg["local_path"])
+        error_messages.append(message)
         raise_display_mode(message, display_mode, log)
 
     if local_only:
-        return
+        return error_messages
 
     # TODO: temporary workaround for circular imports
     from datashuttle.utils.folders import search_for_folders
@@ -671,9 +749,11 @@ def check_high_level_project_structure(cfg, local_only, display_mode, log):
     if ("rawdata" not in all_folder_names) and (
         "derivatives" not in all_folder_names
     ):
-        message = f"The central project must contain a 'rawdata' or 'derivatives' folder. Path: {cfg['central_path']}"
-
+        message = get_missing_top_level_folder_error(cfg["central_path"])
+        error_messages.append(message)
         raise_display_mode(message, display_mode, log)
+
+    return error_messages
 
 
 def check_strict_mode(cfg, top_level_folder, local_only, display_mode, log):
@@ -684,6 +764,8 @@ def check_strict_mode(cfg, top_level_folder, local_only, display_mode, log):
         )
     # TODO: temporary workaround for circular imports
     from datashuttle.utils import folders
+
+    error_messages = []
 
     sub_level_folder_paths = folders.search_project_for_sub_or_ses_names(
         cfg,
@@ -699,11 +781,8 @@ def check_strict_mode(cfg, top_level_folder, local_only, display_mode, log):
         sub_level_name = sub_level_path.name
 
         if sub_level_name[:4] != "sub-":
-            raise_display_mode(
-                f"{sub_level_name} is not a 'sub-' prefixed name. Path: {sub_level_path}",
-                display_mode,
-                log,
-            )
+            message = get_name_error(sub_level_name, "sub-", sub_level_path)
+            error_messages.append(message)
             continue
 
         ses_level_folder_paths = folders.search_project_for_sub_or_ses_names(
@@ -720,11 +799,10 @@ def check_strict_mode(cfg, top_level_folder, local_only, display_mode, log):
             ses_level_name = ses_level_path.name
 
             if ses_level_name[:4] != "ses-":
-                raise_display_mode(
-                    f"{ses_level_name} (for {sub_level_name}) is not a 'ses-' prefixed name. Path: {ses_level_path}",
-                    display_mode,
-                    log,
+                message = get_name_error(
+                    ses_level_name, "ses-", ses_level_path
                 )
+                error_messages.append(message)
 
             base_folder = cfg.get_base_folder("local", top_level_folder)
 
@@ -743,11 +821,15 @@ def check_strict_mode(cfg, top_level_folder, local_only, display_mode, log):
                 datatype_level_name = datatype_level_path.name
 
                 if datatype_level_name not in canonical_datatypes:
-                    raise_display_mode(
-                        f"{datatype_level_name} found at the datatype level is not a valid datatype. Path: {datatype_level_path}",
-                        display_mode,
-                        log,
+                    message = get_datatype_error(
+                        datatype_level_name, datatype_level_path
                     )
+                    error_messages.append(message)
+
+        for message in error_messages:
+            raise_display_mode(message, display_mode, log)
+
+        return error_messages
 
 
 def check_sub_names_value_length_are_consistent_with_project(
@@ -835,7 +917,9 @@ def strip_invalid_names(
     log,
 ) -> List[Path] | List[str]:
     """ """
+    error_messages = []
     new_list = []
+
     for path_or_name in path_or_names_list:
 
         path_, name = get_path_and_name(path_or_name)
@@ -845,7 +929,8 @@ def strip_invalid_names(
                 [name], prefix, return_as_int=True
             )[0]
         except NeuroBlueprintError:
-            message = f"Invalid name: {name}. Path: {path_}"
+            message = get_name_error(name, prefix, path_)
+            error_messages.append(message)
             raise_display_mode(message, display_mode, log)
             continue
 
@@ -854,7 +939,7 @@ def strip_invalid_names(
         else:
             new_list.append(name)  # type: ignore
 
-    return new_list
+    return new_list, error_messages
 
 
 def new_name_duplicates_existing(
@@ -890,9 +975,11 @@ def new_name_duplicates_existing(
 
         if exist_name_id == new_name_id:
             if new_name != exist_name:
-                error_messages.append(
-                    f"The prefix for {new_name} duplicates the name : {exist_name} at path: {exist_path}"
+                message = get_duplicate_name_error(
+                    new_name, exist_name, exist_path
                 )
+                error_messages.append(message)
+
     return error_messages
 
 
@@ -901,6 +988,7 @@ def new_name_duplicates_existing(
 # -----------------------------------------------------------------------------
 
 
+# TODO: move and refactor this...
 def datatypes_are_invalid(
     datatype: Union[List[str], str], allow_all: bool = False
 ) -> Tuple[bool, str]:

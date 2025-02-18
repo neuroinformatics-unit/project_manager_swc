@@ -132,6 +132,7 @@ def get_values_from_bids_formatted_name(
     """
     all_values = []
     for name in all_names:
+
         if key not in name:
             log_and_raise_error(
                 f"The key {key} is not found in {name}", KeyError
