@@ -11,6 +11,7 @@ from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 
 class TestPersistentSettings(BaseTest):
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_persistent_settings_name_templates(self, project):
         """
         Test the 'name_templates' option that is stored in persistent
@@ -117,6 +118,7 @@ class TestPersistentSettings(BaseTest):
 
         project.create_folders("rawdata", good_sub, "ses-02")
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_persistent_settings_tui(self, project):
         """
         Test persistent settings for the project that
@@ -143,6 +145,7 @@ class TestPersistentSettings(BaseTest):
         reloaded_settings = project._load_persistent_settings()
         assert reloaded_settings["tui"] == new_tui_settings
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_bypass_validation(self, project):
         """
         Check bypass validation which will allow folder

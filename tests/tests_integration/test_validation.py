@@ -13,6 +13,7 @@ from datashuttle.utils.custom_exceptions import NeuroBlueprintError
 
 
 class TestValidation(BaseTest):
+
     @pytest.mark.parametrize(
         "sub_name",
         ["sub-001", "sub-999_@DATE@", "sub-001_random-tag_another-tag"],
@@ -131,6 +132,7 @@ class TestValidation(BaseTest):
         )
         self.check_inconsistent_sub_or_ses_value_length_warning(project, "ses")
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_warn_on_inconsistent_sub_and_ses_value_lengths(self, project):
         """
         Test that warning is shown for both subject and session when
@@ -167,6 +169,7 @@ class TestValidation(BaseTest):
     # Test duplicates when making folders
     # -------------------------------------------------------------------------
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_duplicate_ses_or_sub_key_value_pair(self, project):
         """
         Test the check that if a duplicate key is attempt to be made
@@ -207,6 +210,7 @@ class TestValidation(BaseTest):
 
         project.create_folders("rawdata", "sub-001_id-123", "ses-003")
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_duplicate_sub_and_ses_num_leading_zeros(self, project):
         """
         Very similar to test_duplicate_ses_or_sub_key_value_pair(),
@@ -231,6 +235,7 @@ class TestValidation(BaseTest):
             e.value
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_duplicate_sub_when_creating_session(self, project):
         """
         Check the unique case that a duplicate subject is
@@ -283,6 +288,7 @@ class TestValidation(BaseTest):
     # Bad underscore order
     # -------------------------------------------------------------------------
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_invalid_sub_and_ses_name(self, project):
         """
         This is a slightly weird case, the name is successfully
@@ -383,6 +389,7 @@ class TestValidation(BaseTest):
     # Test validate names against project
     # -------------------------------------------------------------------------
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_validate_names_against_project_with_bad_existing_names(
         self, project
     ):
@@ -505,6 +512,7 @@ class TestValidation(BaseTest):
             in str(e.value)
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_validate_names_against_project_interactions(self, project):
         """
         Check that interactions between the list of names and existing
@@ -570,6 +578,9 @@ class TestValidation(BaseTest):
             "sub already exists with the same sub id as sub-1_id-11. "
             "The existing folder is sub-1_id-abc." in str(w[3].message)
         )
+
+        if project.is_local_project():
+            return
 
         # Now make some new paths on central. Pass a bad new subject name
         # (sub-4) and check no error is raised when local_only is `True`
@@ -648,6 +659,7 @@ class TestValidation(BaseTest):
             "The existing folder is ses-003." in str(w[1].message)
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_tags_in_name_templates_pass_validation(self, project):
         """
         It is useful to allow tags in the `name_templates` as it means

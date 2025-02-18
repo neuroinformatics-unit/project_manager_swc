@@ -17,6 +17,7 @@ from textual.widgets import (
 )
 
 from datashuttle.tui.configs import ConfigsContent
+from datashuttle.tui.screens import modal_dialogs
 from datashuttle.tui.tabs import create_folders, logging, transfer
 
 
@@ -30,7 +31,9 @@ class ProjectManagerScreen(Screen):
     method to create new project folders.
 
     The 'Transfer' tab, which handles data upload and download between
-    local / central.
+    local / central. When in 'local-only' mode, this is replaced
+    by a placeholder tab (as the central path is required for
+    transfer-tab setup) and disable it.
 
     The 'Configs' tab displays the current project's configurations
     and allows configs to be reset. This is an instantiation of the
@@ -57,12 +60,19 @@ class ProjectManagerScreen(Screen):
             yield create_folders.CreateFoldersTab(
                 self.mainwindow, self.interface
             )
-            yield transfer.TransferTab(
-                "Transfer",
-                self.mainwindow,
-                self.interface,
-                id="tabscreen_transfer_tab",
-            )
+
+            if self.interface.project.is_local_project():
+                # No transferring for a local project, placeholder tab
+                yield TabPane(
+                    "Transfer", disabled=True, id="placeholder_transfer_tab"
+                )
+            else:
+                yield transfer.TransferTab(
+                    "Transfer",
+                    self.mainwindow,
+                    self.interface,
+                    id="tabscreen_transfer_tab",
+                )
             with TabPane("Configs", id="tabscreen_configs_tab"):
                 yield ConfigsContent(
                     self, self.interface, id="tabscreen_configs_content"
@@ -116,13 +126,42 @@ class ProjectManagerScreen(Screen):
 
     def on_configs_content_configs_saved(self) -> None:
         """
-        When the config file are refreshed, the local path may have changed.
-        In this case the directorytree will be displaying the wrong root,
-        so update it here.
+        When configs are saved, we may switch between a 'full' project
+        and a 'local only' project (no `central_path` or `connection_method` set).
+        In such a case we need to refresh the ProjectManager screen to add / remove
+        the transfer tab.
+
+        Otherwise, if switching between the same mode, when the config file are refreshed,
+        the local path may have changed. The directorytree for creating folders is always
+        updated. The transfer directory tree is only updated if we are not in 'local only' mode.
         """
         self.query_one("#tabscreen_create_tab").update_directorytree_root(
             self.interface.get_configs()["local_path"]
         )
-        self.query_one("#tabscreen_transfer_tab").update_directorytree_root(
-            self.interface.get_configs()["local_path"]
+
+        # project changed from local to full
+        old_project_type = (
+            "local" if any(self.query("#placeholder_transfer_tab")) else "full"
         )
+        project_type = (
+            "local" if self.interface.project.is_local_project() else "full"
+        )
+
+        if old_project_type == project_type:
+
+            if project_type == "full":
+                self.query_one(
+                    "#tabscreen_transfer_tab"
+                ).update_directorytree_root(
+                    self.interface.get_configs()["local_path"]
+                )
+                return
+        else:
+            self.mainwindow.push_screen(
+                modal_dialogs.MessageBox(
+                    f"The project type was changed from {old_project_type} to {project_type}.\n"
+                    f"Reloading the Project Manager screen is required.",
+                    border_color="grey",
+                ),
+                self.dismiss(),
+            )

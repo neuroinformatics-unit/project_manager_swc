@@ -1,7 +1,8 @@
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
+from datashuttle.configs import canonical_configs
 from datashuttle.configs.config_class import Configs
 from datashuttle.utils import utils
 from datashuttle.utils.custom_exceptions import ConfigError
@@ -59,3 +60,34 @@ def attempt_load_configs(
         )
 
     return new_cfg
+
+
+def convert_str_and_pathlib_paths(
+    config_dict: Union["Configs", dict], direction: str
+) -> None:
+    """
+    Config paths are stored as str in the .yaml but used as Path
+    in the module, so make the conversion here.
+
+    Parameters
+    ----------
+
+    config_dict : DataShuttle.cfg dict of configs
+    direction : "path_to_str" or "str_to_path"
+    """
+    for path_key in canonical_configs.keys_str_on_file_but_path_in_class():
+        value = config_dict[path_key]
+
+        if value:
+            if direction == "str_to_path":
+                config_dict[path_key] = Path(value)
+
+            elif direction == "path_to_str":
+                if not isinstance(value, str):
+                    config_dict[path_key] = value.as_posix()
+
+            else:
+                utils.log_and_raise_error(
+                    "Option must be 'path_to_str' or 'str_to_path'",
+                    ValueError,
+                )

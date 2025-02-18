@@ -108,6 +108,10 @@ class ConfigsContent(Container):
                     id="configs_local_filesystem_radiobutton",
                 ),
                 RadioButton("SSH", id="configs_ssh_radiobutton"),
+                RadioButton(
+                    "No connection (local only)",
+                    id="configs_local_only_radiobutton",
+                ),
                 id="configs_connect_method_radioset",
             ),
             *self.config_ssh_widgets,
@@ -211,6 +215,7 @@ class ConfigsContent(Container):
             "#configs_connect_method_label",
             "#configs_local_filesystem_radiobutton",
             "#configs_ssh_radiobutton",
+            "#configs_local_only_radiobutton",
             "#configs_central_host_username_input",
             "#configs_central_host_id_input",
         ]:
@@ -220,10 +225,34 @@ class ConfigsContent(Container):
         """
         Update the displayed SSH widgets when the `connection_method`
         radiobuttons are changed.
+
+        When SSH is set, ssh config-setters are shown. Otherwise, these
+        are hidden.
+
+        When mode is `No connection`, the `central_path` is cleared and
+        disabled.
         """
         label = str(event.pressed.label)
-        assert label in ["SSH", "Local Filesystem"], "Unexpected label."
-        display_ssh = True if label == "SSH" else False
+        assert label in [
+            "SSH",
+            "Local Filesystem",
+            "No connection (local only)",
+        ], "Unexpected label."
+
+        if label == "No connection (local only)":
+            self.query_one("#configs_central_path_input").value = ""
+            self.query_one("#configs_central_path_input").disabled = True
+            self.query_one("#configs_central_path_select_button").disabled = (
+                True
+            )
+            display_ssh = False
+        else:
+            self.query_one("#configs_central_path_input").disabled = False
+            self.query_one("#configs_central_path_select_button").disabled = (
+                False
+            )
+            display_ssh = True if label == "SSH" else False
+
         self.switch_ssh_widgets_display(display_ssh)
         self.set_central_path_input_tooltip(display_ssh)
 
@@ -488,13 +517,11 @@ class ConfigsContent(Container):
             self.parent_class.mainwindow.push_screen(
                 modal_dialogs.MessageBox(
                     "Configs saved.", border_color="green"
-                )
+                ),
+                lambda unused: self.post_message(self.ConfigsSaved()),
             )
         else:
             self.parent_class.mainwindow.show_modal_error_dialog(output)
-
-        # Update the DirectoryTree anyway just in case.
-        self.post_message(self.ConfigsSaved())
 
     def fill_widgets_with_project_configs(self) -> None:
         """
@@ -516,18 +543,30 @@ class ConfigsContent(Container):
 
         # Central Path
         input = self.query_one("#configs_central_path_input")
-        input.value = cfg_to_load["central_path"]
+        input.value = (
+            cfg_to_load["central_path"] if cfg_to_load["central_path"] else ""
+        )
 
         # Connection Method
-        ssh_on = True if cfg_to_load["connection_method"] == "ssh" else False
+        # Make a dict of radiobutton: is on bool to easily find
+        # how to set radiobuttons and associated configs
+        # fmt: off
+        what_radiobuton_is_on = {
+            "configs_ssh_radiobutton":
+                cfg_to_load["connection_method"] == "ssh",
+            "configs_local_filesystem_radiobutton":
+                cfg_to_load["connection_method"] == "local_filesystem",
+            "configs_local_only_radiobutton":
+                cfg_to_load["connection_method"] is None,
+        }
+        # fmt: on
 
-        radiobutton = self.query_one("#configs_ssh_radiobutton")
-        radiobutton.value = ssh_on
+        for id, value in what_radiobuton_is_on.items():
+            self.query_one(f"#{id}").value = value
 
-        radiobutton = self.query_one("#configs_local_filesystem_radiobutton")
-        radiobutton.value = not ssh_on
-
-        self.switch_ssh_widgets_display(display_ssh=ssh_on)
+        self.switch_ssh_widgets_display(
+            display_ssh=what_radiobuton_is_on["configs_ssh_radiobutton"]
+        )
 
         # Central Host ID
         input = self.query_one("#configs_central_host_id_input")
@@ -558,15 +597,24 @@ class ConfigsContent(Container):
             self.query_one("#configs_local_path_input").value
         )
 
-        cfg_kwargs["central_path"] = Path(
-            self.query_one("#configs_central_path_input").value
-        )
+        central_path_value = self.query_one(
+            "#configs_central_path_input"
+        ).value
+        if central_path_value == "":
+            cfg_kwargs["central_path"] = None
+        else:
+            cfg_kwargs["central_path"] = Path(central_path_value)
 
-        cfg_kwargs["connection_method"] = (
-            "ssh"
-            if self.query_one("#configs_ssh_radiobutton").value
-            else "local_filesystem"
-        )
+        if self.query_one("#configs_ssh_radiobutton").value:
+            connection_method = "ssh"
+
+        elif self.query_one("#configs_local_filesystem_radiobutton").value:
+            connection_method = "local_filesystem"
+
+        elif self.query_one("#configs_local_only_radiobutton").value:
+            connection_method = None
+
+        cfg_kwargs["connection_method"] = connection_method
 
         central_host_id = self.query_one(
             "#configs_central_host_id_input"

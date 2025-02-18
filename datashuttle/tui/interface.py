@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from datashuttle.utils.custom_types import InterfaceOutput, TopLevelFolder
 
 from datashuttle import DataShuttle
+from datashuttle.configs import load_configs
 from datashuttle.utils import ssh
 
 
@@ -395,7 +396,7 @@ class Interface:
         are Path converted to str.
         """
         cfg_to_load = copy.deepcopy(self.project.cfg)
-        cfg_to_load.convert_str_and_pathlib_paths(cfg_to_load, "path_to_str")
+        load_configs.convert_str_and_pathlib_paths(cfg_to_load, "path_to_str")
         return cfg_to_load
 
     def get_next_sub(

@@ -16,7 +16,11 @@ from pathlib import Path
 
 import yaml
 
-from datashuttle.configs import canonical_configs, canonical_folders
+from datashuttle.configs import (
+    canonical_configs,
+    canonical_folders,
+    load_configs,
+)
 from datashuttle.utils import folders, utils
 
 
@@ -52,24 +56,21 @@ class Configs(UserDict):
         self.project_name = project_name
         self.file_path = file_path
 
-        self.keys_str_on_file_but_path_in_class = [
-            "local_path",
-            "central_path",
-        ]
-
         self.logging_path: Path
         self.hostkeys_path: Path
         self.ssh_key_path: Path
         self.project_metadata_path: Path
 
     def setup_after_load(self) -> None:
-        self.convert_str_and_pathlib_paths(self, "str_to_path")
+        load_configs.convert_str_and_pathlib_paths(self, "str_to_path")
         self.ensure_local_and_central_path_end_in_project_name()
         self.check_dict_values_raise_on_fail()
 
     def ensure_local_and_central_path_end_in_project_name(self):
         """"""
         for path_type in ["local_path", "central_path"]:
+            if path_type == "central_path" and self[path_type] is None:
+                continue
 
             # important to check for "." path name as these
             # disappear when paths are concatenated.
@@ -107,7 +108,7 @@ class Configs(UserDict):
         Save the dictionary to .yaml file stored in self.file_path.
         """
         cfg_to_save = copy.deepcopy(self.data)
-        self.convert_str_and_pathlib_paths(cfg_to_save, "path_to_str")
+        load_configs.convert_str_and_pathlib_paths(cfg_to_save, "path_to_str")
 
         with open(self.file_path, "w") as config_file:
             yaml.dump(cfg_to_save, config_file, sort_keys=False)
@@ -121,43 +122,13 @@ class Configs(UserDict):
         with open(self.file_path, "r") as config_file:
             config_dict = yaml.full_load(config_file)
 
-        self.convert_str_and_pathlib_paths(config_dict, "str_to_path")
+        load_configs.convert_str_and_pathlib_paths(config_dict, "str_to_path")
 
         self.data = config_dict
 
     # -------------------------------------------------------------------------
     # Utils
     # -------------------------------------------------------------------------
-
-    def convert_str_and_pathlib_paths(
-        self, config_dict: Union["Configs", dict], direction: str
-    ) -> None:
-        """
-        Config paths are stored as str in the .yaml but used as Path
-        in the module, so make the conversion here.
-
-        Parameters
-        ----------
-
-        config_dict : DataShuttle.cfg dict of configs
-        direction : "path_to_str" or "str_to_path"
-        """
-        for path_key in self.keys_str_on_file_but_path_in_class:
-            value = config_dict[path_key]
-
-            if value:
-                if direction == "str_to_path":
-                    config_dict[path_key] = Path(value)
-
-                elif direction == "path_to_str":
-                    if not isinstance(value, str):
-                        config_dict[path_key] = value.as_posix()
-
-                else:
-                    utils.log_and_raise_error(
-                        "Option must be 'path_to_str' or 'str_to_path'",
-                        ValueError,
-                    )
 
     def build_project_path(
         self,
@@ -301,3 +272,14 @@ class Configs(UserDict):
             )
 
         return items
+
+    def is_local_project(self):
+        """
+        A project is 'local-only' if it has no `central_path` and `connection_method`.
+        It can be used to make folders and validate, but not for transfer.
+        """
+        canonical_configs.raise_on_bad_local_only_project_configs(self)
+
+        params_are_none = canonical_configs.local_only_configs_are_none(self)
+
+        return all(params_are_none)

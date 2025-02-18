@@ -108,6 +108,9 @@ def delete_all_folders_in_project_path(project, local_or_central):
     """"""
     folder = f"{local_or_central}_path"
 
+    if folder == "central_path" and project.cfg[folder] is None:
+        return
+
     ds_logger.close_log_filehandler()
     if project.cfg[folder].is_dir() and project.cfg[folder].stem in [
         "local",
@@ -126,16 +129,29 @@ def delete_project_if_it_exists(project_name):
         shutil.rmtree(config_path)
 
 
-def setup_project_fixture(tmp_path, test_project_name):
-    """"""
-    project = setup_project_default_configs(
-        test_project_name,
-        tmp_path,
-        local_path=make_test_path(tmp_path, "local", test_project_name),
-        central_path=make_test_path(tmp_path, "central", test_project_name),
-    )
+def setup_project_fixture(tmp_path, test_project_name, project_type="full"):
+    """
+    Set up a project, either in full mode or local-only mode. This is
+    very similar to the `BaseTest` fixture but is designed for
+    use in other fixtures that require additional boilerplate e.g. logging.
+    """
+    if project_type == "full":
+        project = setup_project_default_configs(
+            test_project_name,
+            tmp_path,
+            local_path=make_test_path(tmp_path, "local", test_project_name),
+            central_path=make_test_path(
+                tmp_path, "central", test_project_name
+            ),
+        )
+    elif project_type == "local":
+        project = DataShuttle(test_project_name)
+        project.make_config_file(
+            local_path=make_test_path(tmp_path, "local", test_project_name)
+        )
 
     cwd = os.getcwd()
+
     return project, cwd
 
 
@@ -396,7 +412,7 @@ def check_project_configs(
     Paths are stored as pathlib in the cfg but str in the .yaml
     """
     for arg_name, value in kwargs[0].items():
-        if arg_name in project.cfg.keys_str_on_file_but_path_in_class:
+        if arg_name in canonical_configs.keys_str_on_file_but_path_in_class():
             assert type(project.cfg[arg_name]) in [
                 pathlib.PosixPath,
                 pathlib.WindowsPath,

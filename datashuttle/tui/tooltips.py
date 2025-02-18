@@ -33,6 +33,10 @@ def get_tooltip(id: str) -> str:
     elif id == "#configs_ssh_radiobutton":
         tooltip = "Use SSH when planning to connect with the central data storage via SSH protocol."
 
+    # No connection (local only) radiobutton
+    elif id == "#configs_local_only_radiobutton":
+        tooltip = "No connection to a central project is made.\nTransfer functionality will not be available."
+
     # central host input
     elif id == "#configs_central_host_id_input":
         tooltip = "The hostname or IP address of the server."

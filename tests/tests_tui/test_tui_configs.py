@@ -5,6 +5,7 @@ import pytest
 import test_utils
 from tui_base import TuiBase
 
+from datashuttle.configs import load_configs
 from datashuttle.tui.app import TuiApp
 from datashuttle.tui.screens.modal_dialogs import (
     SelectDirectoryTreeScreen,
@@ -187,7 +188,7 @@ class TestTuiConfigs(TuiBase):
             # Now get the default datashuttle configs, and check they match
             # those displayed on the ConfigsContent.
             project_cfg = copy.deepcopy(pilot.app.screen.interface.project.cfg)
-            project_cfg.convert_str_and_pathlib_paths(
+            load_configs.convert_str_and_pathlib_paths(
                 project_cfg, "path_to_str"
             )
 
@@ -217,9 +218,7 @@ class TestTuiConfigs(TuiBase):
                 # The purpose is to update to completely new configs
                 assert new_kwargs[key] != project_cfg[key]
 
-            await self.set_configs_content_widgets(
-                pilot, configs_content, new_kwargs
-            )
+            await self.set_configs_content_widgets(pilot, new_kwargs)
 
             await self.check_configs_widgets_match_configs(
                 configs_content, new_kwargs
@@ -429,9 +428,7 @@ class TestTuiConfigs(TuiBase):
             == kwargs["central_path"]
         )
 
-    async def set_configs_content_widgets(
-        self, pilot, configs_content, kwargs
-    ):
+    async def set_configs_content_widgets(self, pilot, kwargs):
         """
         Given a dict of options that can be set on the configs TUI
         in kwargs, set all configs widgets according to kwargs.
@@ -497,7 +494,7 @@ class TestTuiConfigs(TuiBase):
         await self.check_configs_widgets_match_configs(
             configs_content, default_kwargs
         )
-        await self.set_configs_content_widgets(pilot, configs_content, kwargs)
+        await self.set_configs_content_widgets(pilot, kwargs)
         await self.check_configs_widgets_match_configs(configs_content, kwargs)
 
         await pilot.pause()

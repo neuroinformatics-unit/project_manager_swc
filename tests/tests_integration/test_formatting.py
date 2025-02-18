@@ -64,6 +64,7 @@ class TestFormatting(BaseTest):
         ]
 
     @pytest.mark.parametrize("top_level_folder", ["rawdata", "derivatives"])
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_warning_non_consecutive_numbers(self, project, top_level_folder):
         project.create_folders(
             top_level_folder,

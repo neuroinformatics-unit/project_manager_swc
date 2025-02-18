@@ -13,6 +13,8 @@ from datashuttle.configs.canonical_tags import tags
 
 
 class TestMakeFolders(BaseTest):
+
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_generate_folders_default_ses(self, project):
         """
         Make a subject folders with full tree. Don't specify
@@ -33,6 +35,7 @@ class TestMakeFolders(BaseTest):
             folder_used=test_utils.get_all_folders_used(),
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_explicitly_session_list(self, project):
         """
         Perform an alternative test where the output is tested explicitly.
@@ -74,6 +77,7 @@ class TestMakeFolders(BaseTest):
     @pytest.mark.parametrize("ephys", [True, False])
     @pytest.mark.parametrize("funcimg", [True, False])
     @pytest.mark.parametrize("anat", [True, False])
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_every_datatype_passed(self, project, behav, ephys, funcimg, anat):
         """
         Check every combination of data type used and ensure only the
@@ -113,6 +117,7 @@ class TestMakeFolders(BaseTest):
             created_folder_dict=created_folder_dict,
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_custom_folder_names(self, project, monkeypatch):
         """
         Change folder names to custom (non-default) and
@@ -171,6 +176,7 @@ class TestMakeFolders(BaseTest):
             ["funcimg"],
         ],
     )
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_datatypes_subsection(self, project, files_to_test):
         """
         Check that combinations of datatypes passed to make file folder
@@ -204,6 +210,7 @@ class TestMakeFolders(BaseTest):
         else:
             assert ses_file_names == sorted(files_to_test)
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_date_flags_in_session(self, project):
         """
         Check that @DATE@ is converted into current date
@@ -226,6 +233,7 @@ class TestMakeFolders(BaseTest):
         assert all([date in name for name in ses_names])
         assert all([tags("date") not in name for name in ses_names])
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_datetime_flag_in_session(self, project):
         """
         Check that @DATETIME@ is converted to datetime
@@ -252,6 +260,7 @@ class TestMakeFolders(BaseTest):
         assert all([re.search(datetime_regexp, name) for name in ses_names])
         assert all([tags("time") not in name for name in ses_names])
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_created_paths_dict_sub_or_ses_only(self, project):
         """
         Test that the `created_folders` dictionary returned by
@@ -286,6 +295,7 @@ class TestMakeFolders(BaseTest):
     @pytest.mark.parametrize(
         "top_level_folder", canonical_folders.get_top_level_folders()
     )
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_all_top_level_folders(self, project, top_level_folder):
         """
         Check that when switching the top level folder (e.g. rawdata, derivatives)
@@ -423,6 +433,7 @@ class TestMakeFolders(BaseTest):
         )
         assert new_num == "ses-006" if return_with_prefix else "006"
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_get_next_sub_and_ses_name_template(self, project):
         """
         In the case where a name template exists, these getters should use the

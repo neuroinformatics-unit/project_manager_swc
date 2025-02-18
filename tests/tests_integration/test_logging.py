@@ -107,9 +107,9 @@ class TestLogging:
         test_utils.set_datashuttle_loggers(disable=True)
 
     @pytest.fixture(scope="function")
-    def project(self, tmp_path, clean_project_name):
+    def project(self, tmp_path, clean_project_name, request):
         """
-        Setup a project with default configs to use
+        Set `up a project with default configs to use
         for testing. This fixture is distinct
         from the base.py fixture as requires
         additional logging setup / teardown.
@@ -117,8 +117,10 @@ class TestLogging:
         Switch on datashuttle logging as required for
         these tests, then turn back off during tear-down.
         """
+        project_type = getattr(request, "param", "full")
+
         project, cwd = test_utils.setup_project_fixture(
-            tmp_path, clean_project_name
+            tmp_path, clean_project_name, project_type
         )
 
         test_utils.delete_log_files(project.cfg.logging_path)
@@ -134,6 +136,7 @@ class TestLogging:
     # Test Public API Logging
     # ----------------------------------------------------------------------------------------------------------
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_log_filename(self, project):
         """
         Check the log filename is formatted correctly, for
@@ -184,6 +187,7 @@ class TestLogging:
         assert "Update successful. New config file:" in log
         assert """ "central_host_id": "test_id",\n """ in log
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_create_folders(self, project):
         subs = ["sub-111", f"sub-002{tags('to')}004"]
 
@@ -428,6 +432,7 @@ class TestLogging:
             in log
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_logs_bad_create_folders_error(self, project):
         """"""
         project.create_folders("rawdata", "sub-001", datatype="all")
@@ -445,6 +450,7 @@ class TestLogging:
             "The existing folder is sub-001" in log
         )
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_validate_project_logging(self, project):
         """
         Test that `validate_project` logs errors
@@ -478,6 +484,7 @@ class TestLogging:
         for idx in range(len(w)):
             assert str(w[idx].message) in log
 
+    @pytest.mark.parametrize("project", ["local", "full"], indirect=True)
     def test_validate_names_against_project_logging(self, project):
         """
         Implicitly test `validate_names_against_project` called when

@@ -22,6 +22,7 @@ dependencies = [
     "textual",
     "show-in-file-manager",
     "gitpython",
+    "typeguard"
 ]
 
 classifiers = [

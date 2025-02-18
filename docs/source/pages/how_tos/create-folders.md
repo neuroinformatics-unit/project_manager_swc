@@ -40,7 +40,7 @@ Now, let's get started with folder creation!
 ## Creating project folders
 
 The project-name folder is located at the **local path**
-specified when [setting up the project](make-a-new-project_target).
+specified when [setting up the project](make-a-full-project_target).
 
 We will now create subject, session and
 datatype folders within a `rawdata` top-level folder.

@@ -50,6 +50,7 @@ from datashuttle.utils.custom_exceptions import (
 from datashuttle.utils.data_transfer import TransferData
 from datashuttle.utils.decorators import (  # noqa
     check_configs_set,
+    check_is_not_local_project,
     requires_ssh_configs,
 )
 
@@ -324,6 +325,7 @@ class DataShuttle:
     # -------------------------------------------------------------------------
 
     @check_configs_set
+    @check_is_not_local_project
     def upload_custom(
         self,
         top_level_folder: TopLevelFolder,
@@ -399,6 +401,7 @@ class DataShuttle:
             ds_logger.close_log_filehandler()
 
     @check_configs_set
+    @check_is_not_local_project
     def download_custom(
         self,
         top_level_folder: TopLevelFolder,
@@ -477,6 +480,7 @@ class DataShuttle:
     # away the 'top_level_folder' concept.
 
     @check_configs_set
+    @check_is_not_local_project
     def upload_rawdata(
         self,
         overwrite_existing_files: OverwriteExistingFiles = "never",
@@ -508,6 +512,7 @@ class DataShuttle:
         )
 
     @check_configs_set
+    @check_is_not_local_project
     def upload_derivatives(
         self,
         overwrite_existing_files: OverwriteExistingFiles = "never",
@@ -539,6 +544,7 @@ class DataShuttle:
         )
 
     @check_configs_set
+    @check_is_not_local_project
     def download_rawdata(
         self,
         overwrite_existing_files: OverwriteExistingFiles = "never",
@@ -570,6 +576,7 @@ class DataShuttle:
         )
 
     @check_configs_set
+    @check_is_not_local_project
     def download_derivatives(
         self,
         overwrite_existing_files: OverwriteExistingFiles = "never",
@@ -601,6 +608,7 @@ class DataShuttle:
         )
 
     @check_configs_set
+    @check_is_not_local_project
     def upload_entire_project(
         self,
         overwrite_existing_files: OverwriteExistingFiles = "never",
@@ -633,6 +641,7 @@ class DataShuttle:
         ds_logger.close_log_filehandler()
 
     @check_configs_set
+    @check_is_not_local_project
     def download_entire_project(
         self,
         overwrite_existing_files: OverwriteExistingFiles = "never",
@@ -665,6 +674,7 @@ class DataShuttle:
         ds_logger.close_log_filehandler()
 
     @check_configs_set
+    @check_is_not_local_project
     def upload_specific_folder_or_file(
         self,
         filepath: Union[str, Path],
@@ -706,6 +716,7 @@ class DataShuttle:
         ds_logger.close_log_filehandler()
 
     @check_configs_set
+    @check_is_not_local_project
     def download_specific_folder_or_file(
         self,
         filepath: Union[str, Path],
@@ -828,6 +839,7 @@ class DataShuttle:
     # -------------------------------------------------------------------------
 
     @requires_ssh_configs
+    @check_is_not_local_project
     def setup_ssh_connection(self) -> None:
         """
         Setup a connection to the central server using SSH.
@@ -859,6 +871,7 @@ class DataShuttle:
         ds_logger.close_log_filehandler()
 
     @requires_ssh_configs
+    @check_is_not_local_project
     def write_public_key(self, filepath: str) -> None:
         """
         By default, the SSH private key only is stored, in
@@ -888,8 +901,8 @@ class DataShuttle:
     def make_config_file(
         self,
         local_path: str,
-        central_path: str,
-        connection_method: str,
+        central_path: str | None = None,
+        connection_method: str | None = None,
         central_host_id: Optional[str] = None,
         central_host_username: Optional[str] = None,
     ) -> None:
@@ -992,13 +1005,9 @@ class DataShuttle:
             local_vars=locals(),
         )
 
-        for option, value in kwargs.items():
-            if option in self.cfg.keys_str_on_file_but_path_in_class:
-                kwargs[option] = Path(value)
-
         new_cfg = copy.deepcopy(self.cfg)
         new_cfg.update(**kwargs)
-        new_cfg.setup_after_load()  # Will raise on error
+        new_cfg.setup_after_load()  # will raise on error
 
         self.cfg = new_cfg
         self._set_attributes_after_config_load()
@@ -1018,6 +1027,7 @@ class DataShuttle:
         return self.cfg["local_path"]
 
     @check_configs_set
+    @check_is_not_local_project
     def get_central_path(self) -> Path:
         """
         Get the project central path.
@@ -1078,12 +1088,16 @@ class DataShuttle:
 
         local_only : bool
             If `True, only get names from `local_path`, otherwise from
-            `local_path` and `central_path`.
+            `local_path` and `central_path`. If in local-project mode,
+            this flag is ignored.
         """
         name_template = self.get_name_templates()
         name_template_regexp = (
             name_template["sub"] if name_template["on"] else None
         )
+
+        if self.is_local_project():
+            local_only = True
 
         return getters.get_next_sub_or_ses(
             self.cfg,
@@ -1121,12 +1135,16 @@ class DataShuttle:
 
         local_only : bool
             If `True, only get names from `local_path`, otherwise from
-            `local_path` and `central_path`.
+            `local_path` and `central_path`. If in local-project mode,
+            this flag is ignored.
         """
         name_template = self.get_name_templates()
         name_template_regexp = (
             name_template["ses"] if name_template["on"] else None
         )
+
+        if self.is_local_project():
+            local_only = True
 
         return getters.get_next_sub_or_ses(
             self.cfg,
@@ -1137,6 +1155,14 @@ class DataShuttle:
             search_str="ses-*",
             name_template_regexp=name_template_regexp,
         )
+
+    @check_configs_set
+    def is_local_project(self) -> bool:
+        """
+        A project is 'local-only' if it has no `central_path` and `connection_method`.
+        It can be used to make folders and validate, but not for transfer.
+        """
+        return self.cfg.is_local_project()
 
     # Name Templates
     # -------------------------------------------------------------------------
@@ -1214,7 +1240,8 @@ class DataShuttle:
 
         local_only : bool
             If `True`, only the local project is validated. Otherwise, both
-            local and central projects are validated.
+            local and central projects are validated. If in local-project mode,
+            this flag is ignored.
         """
         self._start_log(
             "validate-project",
@@ -1222,6 +1249,9 @@ class DataShuttle:
         )
 
         name_templates = self.get_name_templates()
+
+        if self.is_local_project():
+            local_only = True
 
         validation.validate_project(
             self.cfg,
@@ -1392,7 +1422,7 @@ class DataShuttle:
         which allows well formatted printing.
         """
         copy_dict = copy.deepcopy(self.cfg.data)
-        self.cfg.convert_str_and_pathlib_paths(copy_dict, "path_to_str")
+        load_configs.convert_str_and_pathlib_paths(copy_dict, "path_to_str")
         return json.dumps(copy_dict, indent=4)
 
     def _make_project_metadata_if_does_not_exist(self) -> None:

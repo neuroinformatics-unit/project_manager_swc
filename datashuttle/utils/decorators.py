@@ -47,3 +47,27 @@ def check_configs_set(func):
             return func(*args, **kwargs)
 
     return wrapper
+
+
+def check_is_not_local_project(func):
+    """
+    Decorator to check that the project is not
+    a local project. If it is, raise.
+
+    This decorator should be placed above methods which
+    require `central_path` and `connection_method` to be set.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if args[0].is_local_project():
+            log_and_raise_error(
+                "This function cannot be used for a local-project. "
+                "Set connection configurations using `update_config_file` "
+                "to use this functionality.",
+                ConfigError,
+            )
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper

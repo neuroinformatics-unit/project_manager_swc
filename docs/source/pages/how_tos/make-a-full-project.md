@@ -1,5 +1,5 @@
-(make-a-new-project_target)=
-# How to Make a New Project
+(make-a-full-project_target)=
+# How to Make a Full Project
 
 This guide will cover all you need to know for setting up a new project
 in **datashuttle**.
