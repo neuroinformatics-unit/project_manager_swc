@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, overload
 
 if TYPE_CHECKING:
     from datashuttle.configs.config_class import Configs
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
         TopLevelFolder,
     )
 
+from datetime import datetime
 from itertools import chain
 from pathlib import Path
 
@@ -70,6 +71,7 @@ def validate_list_of_names(
         lambda: names_include_special_characters(path_or_name_list),
         lambda: dashes_and_underscore_alternate_incorrectly(path_or_name_list),
         lambda: value_lengths_are_inconsistent(path_or_name_list, prefix),
+        lambda: datetime_are_iso_format(path_or_name_list),
         lambda: names_dont_match_templates(
             path_or_name_list, prefix, name_templates
         ),
@@ -90,7 +92,7 @@ def validate_list_of_names(
 
 
 def names_dont_match_templates(
-    path_or_name_list: List[Path],
+    path_or_name_list: List[Path] | List[str],
     prefix: Prefix,
     name_templates: Optional[Dict] = None,
 ) -> List[str]:
@@ -267,7 +269,7 @@ def dashes_and_underscore_alternate_incorrectly(
 
 
 def value_lengths_are_inconsistent(
-    path_or_names_list: List[Path] | List[str],
+    path_or_names_list: List[Path] | List[str] | List[Path | str],
     prefix: Prefix,
 ) -> List[str]:
     """
@@ -304,6 +306,38 @@ def value_lengths_are_inconsistent(
     return error_messages
 
 
+def datetime_are_iso_format(
+    path_or_names_list: List[Path] | List[str],
+):  # TODO: check all typing, add docs
+    """ """
+    formats = {
+        "datetime": "%Y%m%dT%H%M%S",
+        "time": "%H%M%S",
+        "date": "%Y%m%d",
+    }
+
+    error_messages = []
+    for path_or_name in path_or_names_list:
+        path_, name = get_path_and_name(path_or_name)
+
+        key = next((key for key in formats if key in name), None)
+        if not key:
+            continue
+
+        format_to_check = utils.get_values_from_bids_formatted_name(
+            [name], key, return_as_int=False
+        )[0]
+        strfmt = formats[key]
+
+        try:
+            datetime.strptime(format_to_check, strfmt)
+        except ValueError:
+            message = f"Name {name} contains an invalid {key}. It should be ISO format: {strfmt}. Path: {path_}"
+            error_messages.append(message)
+
+    return error_messages
+
+
 def duplicated_prefix_values(
     path_or_names_list: List[Path] | List[str], prefix: Prefix
 ) -> List[str]:
@@ -320,10 +354,11 @@ def duplicated_prefix_values(
     Returns `True` if an invalid name was found, along
     with a message detailing the error.
     """
+    names_list: List[str]
     if isinstance(path_or_names_list[0], Path):
-        names_list = [path_.name for path_ in path_or_names_list]
+        names_list = [path_.name for path_ in path_or_names_list]  # type: ignore
     else:
-        names_list = path_or_names_list
+        names_list = path_or_names_list  # type: ignore
 
     int_values = utils.get_values_from_bids_formatted_name(
         names_list, prefix, return_as_int=True
@@ -415,6 +450,7 @@ def validate_project(
     # for every sub look ses level only
     # for every ses look datatype level only
     # but need to do with SSH too. can embed somewhere...?
+    check_high_level_project_structure(cfg, local_only, display_mode, log)
 
     folder_names = getters.get_all_sub_and_ses_names(  # could extend massively, also getting datatype as well as non-NB folders...
         cfg,
@@ -539,6 +575,7 @@ def validate_names_against_project(
     folder_names = getters.get_all_sub_and_ses_names(
         cfg, top_level_folder, local_only
     )
+    # TODO: THESE ARE FOLDER PATHS
 
     # Check subjects
     if folder_names["sub"]:
@@ -597,9 +634,55 @@ def validate_names_against_project(
                         raise_display_mode(message, display_mode, log)
 
 
+def check_high_level_project_structure(cfg, local_only, display_mode, log):
+    """
+    DOC
+    """
+    # TODO: it should be impossible to have non-valid name but check anyways
+    # actually this will raise correctly for the quick valid.ate TEst!
+    error_messages = []
+    error_messages += names_include_special_characters(cfg["local_path"].name)
+    error_messages += names_include_special_characters(
+        cfg["central_path"].name
+    )
+    for message in error_messages:
+        raise_display_mode(message, display_mode, log)
+
+    if (
+        not (cfg["local_path"] / "rawdata").is_dir()
+        or not (cfg["local_path"] / "derivatives").is_dir()
+    ):
+        message = f"The local project must contain a 'rawdata' or 'derivatives' folder. Path: {cfg['local_path']}"
+
+        raise_display_mode(message, display_mode, log)
+
+    if local_only:
+        return
+
+    # TODO: temporary workaround for circular imports
+    from datashuttle.utils.folders import search_for_folders
+
+    # TODO: must test this with SSH!
+    all_folder_names, all_filenames = search_for_folders(
+        cfg,
+        cfg["central_path"],
+        "central",
+        "*",
+        verbose=False,
+        return_full_path=False,
+    )
+
+    if ("rawdata" not in all_folder_names) and (
+        "derivatives" not in all_folder_names
+    ):
+        message = f"The central project must contain a 'rawdata' or 'derivatives' folder. Path: {cfg['central_path']}"
+
+        raise_display_mode(message, display_mode, log)
+
+
 def check_sub_names_value_length_are_consistent_with_project(
     sub_names: List[str],
-    valid_sub_in_project: List[str],
+    valid_sub_in_project: List[str] | List[Path],
     display_mode: DisplayMode,
     log: bool,
 ) -> None:
@@ -631,7 +714,7 @@ def check_sub_names_value_length_are_consistent_with_project(
 
 def check_ses_names_value_length_are_consistent_with_project(
     ses_names: List[str],
-    valid_ses_in_sub: List[str],
+    valid_ses_in_sub: List[str] | List[Path],
     sub_name: str,
     display_mode: DisplayMode,
     log: bool,
@@ -655,6 +738,24 @@ def check_ses_names_value_length_are_consistent_with_project(
         )
         if any(error_message):
             raise_display_mode(error_message[0], display_mode, log)
+
+
+@overload
+def strip_invalid_names(
+    path_or_names_list: List[Path],
+    prefix: Prefix,
+    display_mode,
+    log,
+) -> List[Path]: ...
+
+
+@overload
+def strip_invalid_names(
+    path_or_names_list: List[str],
+    prefix: Prefix,
+    display_mode,
+    log,
+) -> List[str]: ...
 
 
 def strip_invalid_names(
@@ -681,7 +782,7 @@ def strip_invalid_names(
         if path_:
             new_list.append(path_)
         else:
-            new_list.append(name)
+            new_list.append(name)  # type: ignore
 
     return new_list
 

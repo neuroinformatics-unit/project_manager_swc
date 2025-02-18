@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from datashuttle.utils.custom_types import TopLevelFolder
 
 import glob
-import os
 from pathlib import Path
 
 from datashuttle.configs import canonical_folders, canonical_tags
@@ -529,20 +528,22 @@ def search_for_folders(
     return all_folder_names, all_filenames
 
 
+# Actual function implementation
 def search_filesystem_path_for_folders(
     search_path_with_prefix: Path, return_full_path: bool = False
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[List[Path | str], List[Path | str]]:
     """
     Use glob to search the full search path (including prefix) with glob.
     Files are filtered out of results, returning folders only.
     """
     all_folder_names = []
     all_filenames = []
-    for file_or_folder in glob.glob(search_path_with_prefix.as_posix()):
 
-        file_or_folder = Path(file_or_folder)
+    for file_or_folder_str in glob.glob(search_path_with_prefix.as_posix()):
 
-        if os.path.isdir(file_or_folder):
+        file_or_folder = Path(file_or_folder_str)
+
+        if file_or_folder.is_dir():
             all_folder_names.append(
                 file_or_folder if return_full_path else file_or_folder.name
             )
