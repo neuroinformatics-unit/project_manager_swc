@@ -97,7 +97,7 @@ def validate_list_of_names(
     check_duplicates: bool = True,
     name_templates: Optional[Dict] = None,
     log: bool = True,
-) -> None:
+) -> List[str]:
     """
     Validate a list of subject or session names, ensuring
     they are formatted as per NeuroBlueprint.
@@ -130,7 +130,7 @@ def validate_list_of_names(
     is modular. However for large projects this may become slow.
     """
     if len(path_or_name_list) == 0:
-        return
+        return []
 
     tests_to_run = [
         lambda: name_begins_with_bad_key(path_or_name_list, prefix),
@@ -432,7 +432,7 @@ def duplicated_prefix_values(
     error_message = []
     if (
         has_duplicate_ids
-    ):  # TOOD: this is an edge case that is only relevant for a passed list of names. Maybe we can remove this...
+    ):  # TODO: this is an edge case that is only relevant for a passed list of names. Maybe we can remove this...
         error_message.append(
             f"{prefix} names must all have unique integer ids"
             f" after the {prefix} prefix."
@@ -898,7 +898,7 @@ def strip_invalid_names(
     prefix: Prefix,
     display_mode,
     log,
-) -> List[Path]: ...
+) -> Tuple[List[Path], List[str]]: ...
 
 
 @overload
@@ -907,7 +907,7 @@ def strip_invalid_names(
     prefix: Prefix,
     display_mode,
     log,
-) -> List[str]: ...
+) -> Tuple[List[str], List[str]]: ...
 
 
 def strip_invalid_names(
@@ -915,7 +915,7 @@ def strip_invalid_names(
     prefix: Prefix,
     display_mode,
     log,
-) -> List[Path] | List[str]:
+) -> Tuple[List[Path] | List[str], List[str]]:
     """ """
     error_messages = []
     new_list = []
